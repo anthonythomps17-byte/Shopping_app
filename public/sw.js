@@ -20,6 +20,8 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  // sync requests always go to the server, never to the cache
+  if (url.pathname.startsWith('/api/')) return;
   // network first, fall back to cache when offline
   e.respondWith(
     fetch(req)

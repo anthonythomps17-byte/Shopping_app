@@ -1,3 +1,4 @@
-# Static site: no build step, serve the repo root (index.html is the app)
+# The app itself is static (public/, no build step). netlify/functions/sync.mts
+# is the small server that keeps lists in step between phones, using Netlify Blobs.
 [build]
-  publish = "."
+  publish = "public"
