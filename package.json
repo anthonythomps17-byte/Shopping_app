@@ -1,0 +1,12 @@
+{
+  "name": "shopping-app",
+  "private": true,
+  "type": "module",
+  "description": "Shopping list web app, with a Netlify Function that syncs lists between phones",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.3"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.0.2"
+  }
+}

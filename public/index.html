@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shopping</title>
-<meta name="description" content="Shopping lists, containers and recipes — stored on this device only.">
+<meta name="description" content="Shopping lists, containers and recipes — on your phone, or shared between phones.">
 <meta name="theme-color" content="#12b5cb">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -419,6 +419,16 @@ details.trip[open] summary::after{transform:rotate(90deg)}
 #toast.err{background:var(--danger);color:#fff}
 #toast button{background:none;border:none;color:inherit;font-weight:800;padding:0;text-decoration:underline;text-underline-offset:3px}
 
+/* ============ Sharing between phones ============ */
+#syncBtn{position:relative}
+#syncBtn::after{content:"";position:absolute;right:7px;bottom:8px;width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 0 2px var(--surface)}
+.hcode{font-family:var(--mono);font-size:19px;font-weight:750;letter-spacing:.06em;background:var(--surface-3);border-radius:var(--radius-sm);padding:10px 14px;margin-top:6px;text-align:center;user-select:all;overflow-wrap:anywhere}
+.syncline{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:650;color:var(--text-2);margin:12px 0 14px}
+.syncline .led{width:8px;height:8px;border-radius:50%;background:var(--success);flex:none}
+#syncBtn.busy::after,.syncline.busy .led{background:var(--accent)}
+#syncBtn.off::after,.syncline.off .led{background:var(--muted-2)}
+#syncBtn.err::after,.syncline.err .led{background:var(--danger)}
+
 /* ============ Responsive ============ */
 @media (max-width:900px){
   .grid2{grid-template-columns:1fr}
@@ -501,6 +511,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
     <symbol id="i-screen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
     <symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="m7 22-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H8a6 6 0 1 1 5.7-7.9A4.5 4.5 0 1 1 17.5 19z"/></symbol>
     <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
   </defs>
 </svg>
@@ -518,7 +529,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
       <button class="tab" data-view="history"><svg><use href="#i-clock"/></svg>History</button>
       <button class="tab" data-view="settings"><svg><use href="#i-gear"/></svg>Settings</button>
     </nav>
-    <div class="railfoot">Stored on this device only.<br>Nothing is sent anywhere.</div>
+    <div class="railfoot" id="railFoot">Stored on this device only.<br>Nothing is sent anywhere.</div>
   </aside>
 
   <div class="workcol">
@@ -530,6 +541,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
       </div>
       <div class="hright">
         <button class="chip" id="leftChip" title="Go to your list"><span class="led"></span><span id="leftText"></span></button>
+        <button class="iconbtn" id="syncBtn" title="Sharing" hidden><svg><use href="#i-cloud"/></svg></button>
         <button class="iconbtn" id="themeBtn" title="Theme"><svg><use href="#i-auto"/></svg></button>
       </div>
     </header>
@@ -616,6 +628,10 @@ details.trip[open] summary::after{transform:rotate(90deg)}
       <section class="view" id="v-settings">
         <div class="grid2">
           <div class="stack">
+            <div class="card" id="syncCard">
+              <h3>Share between phones</h3>
+              <div id="syncBody"></div>
+            </div>
             <div class="card">
               <h3>Appearance</h3>
               <div class="seg" id="themeSeg">
@@ -631,7 +647,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
           <div class="stack">
             <div class="card">
               <h3>Backup</h3>
-              <p class="note" style="margin:0 0 14px">Everything lives in this browser. Save a backup file now and then, or to move your lists to another device.</p>
+              <p class="note" style="margin:0 0 14px">Save a backup file now and then, just in case, or to move your lists to a phone that isn’t sharing.</p>
               <div class="actions">
                 <button class="btn solid" data-act="export"><svg><use href="#i-download"/></svg>Save backup</button>
                 <label class="btn" for="restoreFile"><svg><use href="#i-upload"/></svg>Restore backup</label>
@@ -807,16 +823,271 @@ function load() {
 }
 let S = load();
 let saveWarned = false;
-function save() {
+function save(push = true) {
   try { localStorage.setItem(STORE, JSON.stringify(S)); saveWarned = false; }
   catch { if (!saveWarned) { saveWarned = true; toast('Couldn’t save — this browser’s storage is full or blocked', { err: true }); } }
+  if (push && Y) syncSoon();
 }
 const cur = () => S.lists.find(l => l.id === S.active) || S.lists[0];
 function withUndo(msg, mutate) {
   const snap = JSON.stringify(S);
   mutate();
+  const after = JSON.stringify(S);
   save(); render();
-  toast(msg, { undo: () => { S = fix(JSON.parse(snap)); save(); render(); } });
+  toast(msg, { undo: () => undoTo(snap, after) });
+}
+// Puts back what one change did, but keeps anything else that's happened since
+// (like items the other phone added in the meantime)
+function undoTo(before, after) { S = fix(merge3(JSON.parse(after), JSON.parse(before), S)); save(); render(); }
+
+/* ================= Sharing between phones ================= */
+// Optional. Phones with the same household code share one copy of everything
+// through /api/sync (netlify/functions/sync.mts). Each phone remembers the last
+// copy it agreed with the server (`base`), so when both phones have changed
+// things it can tell whose change is whose and keep both.
+const SYNC = 'shop_sync';
+const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const newCode = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => CODE_ABC[b & 31]).join('');
+const cleanCode = s => String(s ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const okCode = c => /^[A-HJ-NP-Z2-9]{16}$/.test(c);
+const fmtCode = c => c.match(/.{1,4}/g).join('-');
+const clone = x => JSON.parse(JSON.stringify(x));
+function loadSync() { try { const y = JSON.parse(localStorage.getItem(SYNC)); if (y && okCode(y.code)) return y; } catch {} return null; }
+function saveSync() { try { Y ? localStorage.setItem(SYNC, JSON.stringify(Y)) : localStorage.removeItem(SYNC); } catch {} }
+let Y = loadSync();
+
+// Which list is open, the theme and the grouping belong to each phone, not the household
+function sharedOf(s) { const o = clone(s); delete o.active; delete o.settings.theme; delete o.settings.groupBy; return o; }
+function withLocal(shared) {
+  const o = clone(shared);
+  return fix({ ...o, active: S.active, settings: { ...o.settings, theme: S.settings.theme, groupBy: S.settings.groupBy } });
+}
+
+const isObj = x => x !== null && typeof x === 'object' && !Array.isArray(x);
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined;
+function deq(a, b) {
+  if (a === b) return true;
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object' || Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) return a.length === b.length && a.every((x, i) => deq(x, b[i]));
+  const ka = Object.keys(a);
+  return ka.length === Object.keys(b).length && ka.every(k => Object.prototype.hasOwnProperty.call(b, k) && deq(a[k], b[k]));
+}
+// Three-way merge: what changed here (mine) and what changed on the other phone
+// (theirs), both compared with the last copy we agreed on (base). Lists, items,
+// containers, recipes and shops are matched by id, so adding, ticking and
+// deleting different things on two phones all survive. If both phones changed
+// the very same thing, this phone's version wins; if one phone deleted something
+// the other was changing, the change wins.
+function merge3(base, mine, theirs, key) {
+  if (deq(mine, theirs)) return mine;
+  if (deq(base, mine)) return theirs;
+  if (deq(base, theirs)) return mine;
+  if ((key === 'count' || key === 'bought') && [base, mine, theirs].every(n => typeof n === 'number')) return mine + theirs - base;
+  const ids = a => Array.isArray(a) && a.every(x => isObj(x) && typeof x.id === 'string');
+  if (ids(mine) && ids(theirs)) return mergeById(ids(base) ? base : [], mine, theirs);
+  if (isObj(mine) && isObj(theirs)) {
+    const b = isObj(base) ? base : {}, out = {};
+    for (const k of new Set([...Object.keys(mine), ...Object.keys(theirs), ...Object.keys(b)])) {
+      if (k === '__proto__') continue;
+      const v = merge3(own(b, k), own(mine, k), own(theirs, k), k);
+      if (v !== undefined) out[k] = v;
+    }
+    return out;
+  }
+  return mine;
+}
+function mergeById(base, mine, theirs) {
+  const B = new Map(base.map(x => [x.id, x])), M = new Map(mine.map(x => [x.id, x])), T = new Map(theirs.map(x => [x.id, x]));
+  const out = [];
+  for (const m of mine) {
+    const b = B.get(m.id), t = T.get(m.id);
+    if (t) out.push(merge3(b, m, t));
+    else if (!b || !deq(b, m)) out.push(m); // new here, or changed here after the other phone deleted it
+  }
+  theirs.forEach((t, i) => {
+    if (M.has(t.id)) return;
+    const b = B.get(t.id);
+    if (b && deq(b, t)) return; // deleted here, untouched there
+    // new there: put it after the same neighbour it has on the other phone
+    let at = 0;
+    for (let j = i - 1; j >= 0 && !at; j--) at = out.findIndex(x => x.id === theirs[j].id) + 1;
+    out.splice(at, 0, t);
+  });
+  return out;
+}
+
+async function syncFetch(code, rev, data) {
+  const body = data ? JSON.stringify({ rev, data }) : undefined;
+  const res = await fetch('/api/sync' + (data ? '' : '?rev=' + rev), {
+    method: data ? 'PUT' : 'GET', cache: 'no-store', body,
+    // lets a save finish even if the phone is being locked (browsers cap this at 64KB)
+    keepalive: !!body && body.length < 60000 && document.visibilityState === 'hidden',
+    headers: { 'x-household': code, ...(body ? { 'content-type': 'application/json' } : {}) },
+  });
+  let out = null;
+  try { out = await res.json(); } catch {}
+  if ((res.ok || res.status === 409) && out && typeof out.rev === 'number') return { ...out, conflict: res.status === 409 };
+  throw new Error((out && out.error) || (res.status === 404 ? 'this site doesn’t have the sync server' : `the server said ${res.status}`));
+}
+
+let syncing = false, syncAgain = false, syncT, syncStatus = { s: 'ok', at: 0, msg: '' };
+function syncSoon(ms = 700) { clearTimeout(syncT); syncT = setTimeout(sync, ms); }
+async function sync() {
+  clearTimeout(syncT);
+  const y = Y;
+  if (!y) return;
+  // a sheet may be editing things a merge would replace; catch up when it closes
+  if (!$('sheet').hidden) return;
+  if (syncing) { syncAgain = true; return; }
+  syncing = true; syncAgain = false;
+  try {
+    for (let n = 0; n < 5 && Y === y; n++) {
+      const mine = sharedOf(S);
+      if (y.base && deq(mine, y.base)) {
+        // nothing to send, so just check for news
+        const r = await syncFetch(y.code, y.rev);
+        if (Y === y && r.rev !== y.rev && (r.rev > y.rev || !r.data)) takeRemote(y, r);
+        if (Y === y && y.base) break; // (if the server had lost it, the next round sends our copy)
+        continue;
+      }
+      setSync('busy');
+      const r = await syncFetch(y.code, y.rev, mine);
+      if (Y !== y) break;
+      if (r.conflict) { takeRemote(y, r); continue; }
+      y.rev = r.rev; y.base = mine; saveSync();
+      if (deq(sharedOf(S), mine)) break;
+    }
+    if (Y === y) setSync('ok');
+  } catch (e) {
+    if (Y === y) setSync(navigator.onLine === false || e instanceof TypeError ? 'off' : 'err', e.message);
+  } finally {
+    syncing = false;
+    if (syncAgain) syncSoon(200);
+  }
+}
+function takeRemote(y, { rev, data }) {
+  if (!data) { y.rev = 0; y.base = null; saveSync(); return; } // gone from the server: our copy goes back up
+  const mine = sharedOf(S), merged = merge3(y.base, mine, data);
+  y.rev = rev; y.base = data; saveSync();
+  if (!deq(merged, mine)) { S = withLocal(merged); save(false); render(); }
+}
+function setSync(s, msg = '') {
+  syncStatus = { s, msg, at: s === 'ok' ? Date.now() : syncStatus.at };
+  paintSync();
+}
+function syncText() {
+  const { s, msg, at } = syncStatus;
+  if (s === 'busy') return 'Syncing…';
+  if (s === 'off') return 'Offline — changes will sync when you’re back online';
+  if (s === 'err') return `Couldn’t sync: ${msg}`;
+  return at ? `Up to date · ${new Date(at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Connecting…';
+}
+function paintSync() {
+  const b = $('syncBtn'), cls = { busy: ' busy', off: ' off', err: ' err' }[syncStatus.s] || '';
+  b.hidden = !Y;
+  b.className = 'iconbtn' + cls;
+  b.title = 'Sharing: ' + syncText();
+  $('railFoot').innerHTML = Y ? 'Shared with your household<br>through your Netlify site.' : 'Stored on this device only.<br>Nothing is sent anywhere.';
+  const html = Y
+    ? `<p class="note" style="margin:0 0 12px">This phone shares lists, containers, recipes and history with your household. To add another phone, send it an invite, or open the app there and tap <b>Join with a code</b>.</p>
+      <div class="flabel">Household code</div><div class="hcode">${fmtCode(Y.code)}</div>
+      <div class="syncline${cls}"><span class="led"></span><span>${esc(syncText())}</span></div>
+      <div class="actions"><button class="btn solid" data-sync="invite">${ico('share')}Send invite</button><button class="btn" data-sync="copy">${ico('copy')}Copy code</button><button class="btn" data-sync="now">${ico('repeat')}Sync now</button><button class="btn danger" data-sync="stop">Stop sharing</button></div>
+      <p class="note">Anyone with the code can see and change your lists, so only share it with your household.</p>`
+    : `<p class="note" style="margin:0 0 14px">Keep the same lists, containers, recipes and history on more than one phone, yours and your partner’s. Ticks and new items show up on the other phone within a few seconds. It all goes through your own Netlify site.</p>
+      <div class="actions"><button class="btn solid" data-sync="start">${ico('cloud')}Start sharing</button><button class="btn" data-sync="join">${ico('paste')}Join with a code</button></div>`;
+  if ($('syncBody').dataset.html !== html) { $('syncBody').innerHTML = html; $('syncBody').dataset.html = html; }
+}
+
+async function startSync() {
+  Y = { code: newCode(), rev: 0, base: null };
+  saveSync(); setSync('busy');
+  await sync();
+  if (syncStatus.s === 'ok') return toast('Sharing is on — now send the invite to the other phone');
+  const why = syncStatus.s === 'off' ? 'you’re offline' : syncStatus.msg;
+  Y = null; saveSync(); setSync('ok');
+  toast(`Couldn’t start sharing: ${why}`, { err: true });
+}
+function stopSync() {
+  confirmSheet({
+    title: 'Stop sharing on this phone?', ok: 'Stop sharing', danger: true,
+    text: 'Everything stays on this phone, but changes won’t sync any more. Other phones in the household carry on sharing with each other.',
+    onOk: () => { Y = null; saveSync(); setSync('ok'); toast('Sharing stopped on this phone'); },
+  });
+}
+function sendInvite() {
+  const code = fmtCode(Y.code), link = `${location.origin}/#join=${code}`;
+  shareText('Join our shopping list', `Join our shopping list: ${link}\n\nOr open the Shopping app, go to Settings → Join with a code, and enter ${code}`, 'Invite copied — paste it into a message');
+}
+const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isInstalled = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+function joinSheet(code = '', fromLink = false) {
+  if (Y && Y.code === code) return toast('This phone is already sharing with that household');
+  // On iPhone the Home Screen app has its own storage, separate from Safari
+  const iosTip = fromLink && isIOS() && !isInstalled();
+  openSheet({
+    title: 'Join a household',
+    body: `<p style="margin:4px 0 14px">Share lists, containers, recipes and history with the other phones in your household. The code is in Settings on a phone that’s already sharing.</p>
+      ${iosTip ? `<div class="banner" style="margin-bottom:14px"><div class="bico">${ico('screen')}</div><p><b>Using it from your Home Screen?</b>On iPhone, the Home Screen app keeps its own copy, separate from Safari. Add it first (Share → Add to Home Screen), open it from there, and join in Settings with this code.</p></div>` : ''}
+      <form id="jForm" class="field"><label for="jIn">Household code</label><input class="input" id="jIn" value="${code ? fmtCode(code) : ''}" placeholder="XXXX-XXXX-XXXX-XXXX" autocapitalize="characters" autocomplete="off" spellcheck="false" style="font-family:var(--mono);letter-spacing:.05em"${code ? '' : ' autofocus'}></form>
+      ${Y ? '<p class="note">This phone is already sharing with a different household. Joining switches it to this one.</p>' : ''}`,
+    foot: `<div class="actions">${iosTip ? `<button class="btn" id="jCopy">${ico('copy')}Copy code</button>` : '<button class="btn" data-close>Cancel</button>'}<button class="btn solid" id="jOk">Join here</button></div>`,
+    mount: () => {
+      if ($('jCopy')) $('jCopy').onclick = () => copyText(fmtCode(code), 'Code copied');
+      const go = async e => {
+        e && e.preventDefault();
+        const c = cleanCode($('jIn').value);
+        if (!okCode(c)) { $('jIn').focus(); return toast('That code doesn’t look right — it’s 16 letters and numbers', { err: true }); }
+        if (Y && Y.code === c) { closeSheet(); return toast('This phone is already sharing with that household'); }
+        $('jOk').disabled = true; $('jOk').textContent = 'Joining…';
+        let r;
+        try { r = await syncFetch(c, -1); }
+        catch (err) { $('jOk').disabled = false; $('jOk').textContent = 'Join here'; return toast(navigator.onLine === false ? 'You’re offline — try again when you have signal' : `Couldn’t join: ${err.message}`, { err: true }); }
+        if (!r.data) { $('jOk').disabled = false; $('jOk').textContent = 'Join here'; return toast('No household has that code. Check it, and that the other phone is online and sharing.', { err: true }); }
+        const hasStuff = S.lists.some(l => l.items.length) || S.containers.length || S.recipes.length || S.trips.length;
+        if (!hasStuff) { closeSheet(); return finishJoin(c, r, false); }
+        openSheet({
+          title: 'This phone already has lists',
+          body: `<p style="margin:4px 0 8px">Add what’s on this phone to the household’s lists, or replace it with the household’s? Same-named lists are put together.</p>`,
+          foot: `<div class="actions"><button class="btn" data-close>Cancel</button><button class="btn danger" id="jReplace">Replace</button><button class="btn solid" id="jCombine">Combine</button></div>`,
+          mount: () => {
+            $('jReplace').onclick = () => { closeSheet(); finishJoin(c, r, false); };
+            $('jCombine').onclick = () => { closeSheet(); finishJoin(c, r, true); };
+          },
+        });
+      };
+      $('jForm').onsubmit = go; $('jOk').onclick = go;
+    },
+  });
+}
+function finishJoin(code, { rev, data }, keepMine) {
+  Y = { code, rev, base: data };
+  saveSync();
+  S = withLocal(keepMine ? combine(sharedOf(S), data) : data);
+  save(); applyTheme(); render(); setSync('ok');
+  toast('Joined — this phone now shares with your household');
+}
+// Joining with lists already on this phone: add them to the household's rather than lose them
+function combine(mine, theirs) {
+  const out = clone(theirs);
+  out.lists = out.lists || []; out.containers = out.containers || []; out.recipes = out.recipes || []; out.trips = out.trips || [];
+  out.catalog = out.catalog || {}; out.settings = out.settings || {};
+  for (const l of mine.lists) {
+    const same = out.lists.find(x => norm(x.name) === norm(l.name));
+    if (!same) { if (l.items.length) out.lists.push(l); continue; }
+    for (const i of l.items) {
+      const ex = !i.done && same.items.find(x => !x.done && mkey(x.name) === mkey(i.name));
+      if (ex) mergeQty(ex, i); else same.items.push(i);
+    }
+  }
+  for (const k of ['containers', 'recipes', 'trips']) for (const x of mine[k]) if (!out[k].some(y => y.id === x.id)) out[k].push(x);
+  out.trips.sort((a, b) => b.at - a.at);
+  for (const [k, c] of Object.entries(mine.catalog)) {
+    const o = own(out.catalog, k);
+    out.catalog[k] = o ? { ...c, ...o, count: (o.count || 0) + (c.count || 0), bought: (o.bought || 0) + (c.bought || 0), last: Math.max(o.last || 0, c.last || 0) } : c;
+  }
+  out.settings.staples = [...new Set([...(out.settings.staples || []), ...(mine.settings.staples || [])])];
+  return out;
 }
 
 function remember(name, { qty, cat, price } = {}) {
@@ -1029,7 +1300,7 @@ const VIEWS = {
   containers: ['Containers', 'Groups of items you buy together'],
   recipes: ['Recipes', 'Import recipes from Claude and shop for the ingredients'],
   history: ['History', 'What you buy, and when'],
-  settings: ['Settings', 'Theme, staples and backups'],
+  settings: ['Settings', 'Sharing, theme, staples and backups'],
 };
 let view = 'lists';
 try { const v = localStorage.getItem('shop_view'); if (VIEWS[v]) view = v; } catch {}
@@ -1371,9 +1642,9 @@ function listText(l) {
   }
   return lines.join('\n');
 }
-async function shareText(title, text) {
+async function shareText(title, text, copied = 'List copied — paste it into a message') {
   if (navigator.share) { try { await navigator.share({ title, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
-  copyText(text, 'List copied — paste it into a message');
+  copyText(text, copied);
 }
 async function copyText(text, msg) {
   try { await navigator.clipboard.writeText(text); toast(msg || 'Copied'); }
@@ -1490,9 +1761,9 @@ function openPicker({ title, intro = '', rows, src, emptyMsg = 'Nothing to add',
         const l = targetList(), picked = rows.filter(r => r.checked);
         closeSheet();
         const snap = JSON.stringify(S);
-        const res = addEntries(l, picked, src);
+        const res = addEntries(l, picked, src), after = JSON.stringify(S);
         save(); render();
-        toast(addedMsg(res, S.lists.length > 1 ? l.name : ''), { undo: () => { S = fix(JSON.parse(snap)); save(); render(); } });
+        toast(addedMsg(res, S.lists.length > 1 ? l.name : ''), { undo: () => undoTo(snap, after) });
       };
     },
   });
@@ -1742,9 +2013,9 @@ function openRecipe(r, shopOnly = false) {
         const picked = rows.filter(x => x.checked).map(x => ({ name: x.name, qty: scaledQty(x, f), num: x.num != null ? x.num * f : null, unit: x.unit, note: '' }));
         closeSheet();
         const snap = JSON.stringify(S);
-        const res = addEntries(l, picked, r.title);
+        const res = addEntries(l, picked, r.title), after = JSON.stringify(S);
         save(); render();
-        toast(addedMsg(res, S.lists.length > 1 ? l.name : ''), { undo: () => { S = fix(JSON.parse(snap)); save(); render(); } });
+        toast(addedMsg(res, S.lists.length > 1 ? l.name : ''), { undo: () => undoTo(snap, after) });
       };
     },
   });
@@ -1862,10 +2133,17 @@ $('v-settings').addEventListener('click', e => {
     return toast('Backup saved');
   }
   if (a.dataset.act === 'erase') {
-    return confirmSheet({ title: 'Erase everything?', text: 'This deletes all your lists, containers, recipes and history from this device. Save a backup first if you might want them back.', ok: 'Erase everything', danger: true, onOk: () => {
+    return confirmSheet({ title: 'Erase everything?', text: `This deletes all your lists, containers, recipes and history from this ${Y ? 'phone, and from every phone sharing with it' : 'device'}. Save a backup first if you might want them back.`, ok: 'Erase everything', danger: true, onOk: () => {
       const theme = S.settings.theme; S = blank(); S.settings.theme = theme; save(); render(); toast('Everything erased'); } });
   }
 });
+$('syncCard').addEventListener('click', e => {
+  const a = e.target.closest('[data-sync]');
+  if (!a) return;
+  ({ start: startSync, join: () => joinSheet(), invite: sendInvite, copy: () => copyText(fmtCode(Y.code), 'Code copied'), now: sync, stop: stopSync })[a.dataset.sync]();
+});
+$('syncBtn').onclick = () => setView('settings');
+
 $('restoreFile').onchange = async e => {
   const f = e.target.files[0];
   e.target.value = '';
@@ -1875,7 +2153,7 @@ $('restoreFile').onchange = async e => {
   if (!data || !Array.isArray(data.lists)) return toast('That isn’t a backup from this app', { err: true });
   confirmSheet({
     title: 'Restore this backup?',
-    text: `It has ${plural(data.lists.length, 'list')}, ${plural((data.containers || []).length, 'container')} and ${plural((data.recipes || []).length, 'recipe')}. It replaces everything currently on this device.`,
+    text: `It has ${plural(data.lists.length, 'list')}, ${plural((data.containers || []).length, 'container')} and ${plural((data.recipes || []).length, 'recipe')}. It replaces everything currently on this ${Y ? 'phone, and on every phone sharing with it' : 'device'}.`,
     ok: 'Restore', onOk: () => { S = fix(data); save(); applyTheme(); render(); toast('Backup restored'); },
   });
 };
@@ -1900,6 +2178,7 @@ function closeSheet() {
   $('sheet').hidden = true;
   document.body.style.overflow = '';
   $('sheetBody').innerHTML = '';
+  if (Y) syncSoon(100);
 }
 $('sheet').addEventListener('click', e => { if (e.target === $('sheet') || e.target.closest('[data-close]')) closeSheet(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('sheet').hidden) closeSheet(); });
@@ -1938,7 +2217,22 @@ function toast(msg, { undo, err } = {}) {
 /* ================= Start ================= */
 applyTheme();
 render();
-window.addEventListener('storage', e => { if (e.key === STORE) { S = load(); render(); } });
+paintSync();
+window.addEventListener('storage', e => {
+  if (e.key === STORE) { S = load(); render(); }
+  if (e.key === SYNC) { Y = loadSync(); paintSync(); }
+});
+// Sharing: check for the other phone's changes on open, every few seconds while
+// the app is on screen, and when the signal comes back; send ours when it's put away
+if (Y) sync();
+setInterval(() => { if (Y && document.visibilityState === 'visible') sync(); }, 8000);
+document.addEventListener('visibilitychange', () => { if (Y && (document.visibilityState === 'visible' || !deq(sharedOf(S), Y.base))) sync(); });
+window.addEventListener('online', () => { if (Y) sync(); });
+// Invite links look like …/#join=XXXX-XXXX-XXXX-XXXX
+{
+  const m = location.hash.match(/join=([A-Za-z0-9-]+)/);
+  if (m) { history.replaceState(null, '', location.pathname + location.search); joinSheet(cleanCode(m[1]), true); }
+}
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
