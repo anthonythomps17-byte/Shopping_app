@@ -1,6 +1,6 @@
 # Shopping_app
 
-A shopping list web app for ticking things off as you shop. It matches the look of Wealth Tracker and works the same way: one `index.html`, no build step, installable on your phone's home screen, works offline in the shop, and everything is stored on the device only.
+A shopping list web app for ticking things off as you shop. It matches the look of Wealth Tracker and works the same way: one `index.html`, no build step, installable on your phone's home screen, and works offline in the shop. Everything is stored on the phone, and you can choose to share it between phones (yours and your partner's) through your Netlify site.
 
 ## Features
 
@@ -13,20 +13,45 @@ A shopping list web app for ticking things off as you shop. It matches the look 
 - **Recipes from Claude**: import `.md` recipe files (button, drag and drop, or paste). Scale the servings, untick what you already have (cupboard staples start unticked), and add the rest to your list. The **Claude prompt** button copies a ready-made request that makes Claude reply in the right format.
 - **Finish shop**: saves the ticked items to History and clears them, leaving anything you didn't get on the list.
 - **History**: past shops (with "add these again"), most-bought items, and a searchable "Buy again" list.
+- **Share between phones**: Settings → *Start sharing* gives you a household code and an invite link. Any phone that joins sees the same lists, containers, recipes and history, and ticks show up on the other phone within a few seconds. Each phone keeps its own theme and open list.
 - **Keep screen on** while shopping (on phones that support it), share a list as text, undo on deletes, light/dark theme, and backup/restore to a file.
 
 ## Recipe format
 
 See [docs/recipe-format.md](docs/recipe-format.md). There's an example in [recipes/chicken-stir-fry.md](recipes/chicken-stir-fry.md).
 
+## Putting it on a phone
+
+There's no app store download: it's a web app you add to your home screen.
+
+- **iPhone**: open the site in Safari, tap **Share**, then **Add to Home Screen**.
+- **Android**: open the site in Chrome, tap the **⋮** menu, then **Install app** (or **Add to Home screen**).
+
+To share lists, tap **Settings → Start sharing** on the first phone, then **Send invite** to the other person. On iPhone the home screen app keeps its own storage, separate from Safari. So on the second iPhone, add the app to the home screen first, open it from there, and use **Settings → Join with a code**.
+
+## How sharing works
+
+Each phone keeps working from its own copy, offline included. When something changes, it's sent to `/api/sync` ([netlify/functions/sync.mts](netlify/functions/sync.mts)), which keeps one copy per household in [Netlify Blobs](https://docs.netlify.com/build/data-and-storage/netlify-blobs/). Phones check for each other's changes every few seconds while the app is open.
+
+- A save only goes through if it was made on top of the latest copy. Otherwise the phone gets the latest copy back, merges the two and tries again. Lists, items, containers, recipes and past shops are matched by id, so two people adding, ticking and removing different things at the same time all survives. If both change the very same thing, the last phone to save wins.
+- The household code is the password: anyone with it can read and change that household's lists. It's 16 random characters, and the server stores the data under a hash of the code rather than the code itself.
+- Deploy previews and `netlify dev` use their own store, so testing never touches the real lists.
+
 ## Running it
 
-Open `index.html` in a browser, or serve the folder locally:
+The app is `public/index.html`. Open it in a browser, or serve the folder locally:
 
 ```sh
-python3 -m http.server 8000
+python3 -m http.server 8000 -d public
+```
+
+Sharing needs the Netlify Function too, so to try that locally use the [Netlify CLI](https://docs.netlify.com/cli/get-started/):
+
+```sh
+npm install
+npx netlify dev
 ```
 
 ## Deployment
 
-Hosted on [Netlify](https://www.netlify.com/) as a static site. `netlify.toml` publishes the repo root, and there's no build command.
+Hosted on [Netlify](https://www.netlify.com/). `netlify.toml` publishes `public/` with no build command, and Netlify picks up the sync function from `netlify/functions/`. Netlify Blobs needs no setup.

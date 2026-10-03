@@ -1,7 +1,7 @@
 {
   "name": "Shopping",
   "short_name": "Shopping",
-  "description": "Shopping lists, containers and recipes — stored on this device only.",
+  "description": "Shopping lists, containers and recipes — on your phone, or shared between phones.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
