@@ -339,6 +339,39 @@ select.input{appearance:auto}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .dropzone{outline:2px dashed var(--brand);outline-offset:6px;border-radius:var(--radius)}
 
+/* ============ Meal plan ============ */
+.weekbar{gap:12px;flex-wrap:nowrap}
+.weeklbl{min-width:0;text-align:center}
+.weeklbl b{display:block;font-size:16px;font-weight:750;letter-spacing:-.01em;white-space:nowrap}
+.weeklbl small{display:block;font-size:12px;color:var(--muted);font-weight:650;white-space:nowrap}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.day{padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.day.today{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand),var(--shadow)}
+.day.past{opacity:.72}
+.day-h{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.day-h b{font-size:14px;font-weight:750}
+.day-h small{color:var(--muted);font-size:12px;font-weight:650}
+.day-h .badge{margin-left:auto}
+.meal{display:flex;align-items:center;gap:11px;width:100%;padding:8px 6px;border:none;background:none;border-radius:11px;text-align:left;min-width:0}
+.meal:hover{background:var(--surface-2)}
+.meal .cico{width:36px;height:36px;font-size:15px;border-radius:10px}
+.meal .lbl{flex:1;min-width:0;font-weight:650;font-size:14px;line-height:1.3}
+.meal .lbl small{display:block;font-size:11.5px;color:var(--muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meal.cooked .lbl{color:var(--muted)}
+.meal .done-ico{width:22px;height:22px;border-radius:50%;background:var(--success);color:#fff;display:grid;place-items:center;flex:none}
+.meal .done-ico svg{width:12px;height:12px}
+.day .addmeal{align-self:flex-start;margin:4px 0 0 6px}
+.ings{display:flex;flex-direction:column}
+.ing{display:flex;align-items:baseline;gap:12px;padding:8px 4px;border-bottom:1px solid var(--surface-3);font-size:14px}
+.ing:last-child{border-bottom:none}
+.ing .qty{min-width:58px;font-size:13px}
+.ing .nm{flex:1;min-width:0;font-weight:650}
+.ing .nm small{font-weight:600;color:var(--muted);font-size:12px;margin-left:6px}
+.plansel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 6px;padding:10px 12px;border-radius:12px;background:var(--brand-soft)}
+.actions select.input{width:auto;flex:1;min-width:180px;padding:8px 10px;font-size:14px}
+.plansel svg{width:18px;height:18px;color:var(--brand-ink)}
+.plansel select.input{width:auto;flex:1;min-width:150px;padding:8px 10px;font-size:14px;background:var(--surface)}
+
 /* ============ History ============ */
 .rows{display:flex;flex-direction:column}
 .row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--surface-3);min-width:0}
@@ -472,6 +505,8 @@ details.trip[open] summary::after{transform:rotate(90deg)}
   .sheet-foot .actions .btn.solid{flex:1}
   .sheet-foot select.input{max-width:none;width:100%}
   .erow{grid-template-columns:minmax(0,1fr) 88px auto}
+  .days{grid-template-columns:minmax(0,1fr)}
+  .weekbar .btn.sm{padding:7px 10px}
   .banner{flex-wrap:wrap}
   .banner .btn{margin-left:50px}
   #toast{bottom:calc(90px + env(safe-area-inset-bottom))}
@@ -511,6 +546,9 @@ details.trip[open] summary::after{transform:rotate(90deg)}
     <symbol id="i-screen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
     <symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="m7 22-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7.5 14h2M11 14h2M14.5 14h2M7.5 17.5h2M11 17.5h2"/></symbol>
+    <symbol id="i-chevl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></symbol>
+    <symbol id="i-chevr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></symbol>
     <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H8a6 6 0 1 1 5.7-7.9A4.5 4.5 0 1 1 17.5 19z"/></symbol>
     <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
   </defs>
@@ -524,6 +562,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
     </div>
     <nav class="tabs" aria-label="Sections">
       <button class="tab on" data-view="lists"><svg><use href="#i-basket"/></svg>Lists<span class="cnt" id="leftCnt" hidden></span></button>
+      <button class="tab" data-view="plan"><svg><use href="#i-calendar"/></svg>Meals</button>
       <button class="tab" data-view="containers"><svg><use href="#i-box"/></svg>Containers</button>
       <button class="tab" data-view="recipes"><svg><use href="#i-book"/></svg>Recipes</button>
       <button class="tab" data-view="history"><svg><use href="#i-clock"/></svg>History</button>
@@ -576,6 +615,20 @@ details.trip[open] summary::after{transform:rotate(90deg)}
             <button class="pill" id="wakeBtn" data-act="wake" hidden><svg><use href="#i-screen"/></svg>Keep screen on</button>
           </div>
           <div class="stack" id="listGroups"></div>
+        </div>
+      </section>
+
+      <!-- ============ MEAL PLAN ============ -->
+      <section class="view" id="v-plan">
+        <div class="stack">
+          <div class="toolbar weekbar">
+            <button class="iconbtn" data-act="week-prev" title="Previous week" aria-label="Previous week"><svg><use href="#i-chevl"/></svg></button>
+            <div class="weeklbl"><b id="weekTitle"></b><small id="weekSub"></small></div>
+            <button class="iconbtn" data-act="week-next" title="Next week" aria-label="Next week"><svg><use href="#i-chevr"/></svg></button>
+            <span class="grow"></span>
+            <button class="btn sm" data-act="week-today" id="weekToday">This week</button>
+          </div>
+          <div class="days" id="planDays"></div>
         </div>
       </section>
 
@@ -656,7 +709,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
             </div>
             <div class="card">
               <h3>Start again</h3>
-              <p class="note" style="margin:0 0 14px">Deletes every list, container, recipe and your item history from this device.</p>
+              <p class="note" style="margin:0 0 14px">Deletes every list, meal plan, container, recipe and your item history from this device.</p>
               <button class="btn danger" data-act="erase"><svg><use href="#i-trash"/></svg>Erase everything</button>
             </div>
           </div>
@@ -698,6 +751,13 @@ function fmtDate(ts) {
   if (days < 7) return d.toLocaleDateString('en-GB', { weekday: 'long' });
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
 }
+// Local calendar dates as "YYYY-MM-DD", weeks starting on Monday
+const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const fromIso = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = fromIso(s); d.setDate(d.getDate() + n); return isoDay(d); };
+const todayIso = () => isoDay(new Date());
+const mondayOf = s => addDays(s, -((fromIso(s).getDay() + 6) % 7));
+const dayLabel = (s, opts = { weekday: 'short', day: 'numeric', month: 'short' }) => fromIso(s).toLocaleDateString('en-GB', opts);
 const PALETTE = ['#12b5cb', '#eb6834', '#4a3aa7', '#1baf7a', '#e87ba4', '#eda100', '#2a78d6', '#008300'];
 const hueFor = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return PALETTE[h % PALETTE.length]; };
 
@@ -803,14 +863,14 @@ function mergeQty(item, add) {
 const DEFAULT_STAPLES = ['Salt', 'Black pepper', 'Pepper', 'Water', 'Olive oil', 'Vegetable oil', 'Sunflower oil'];
 function blank() {
   const list = { id: uid(), name: 'Shopping', items: [], created: Date.now() };
-  return { v: 1, lists: [list], active: list.id, containers: [], recipes: [], catalog: {}, trips: [],
+  return { v: 1, lists: [list], active: list.id, containers: [], recipes: [], meals: [], catalog: {}, trips: [],
     settings: { theme: 'auto', groupBy: 'aisle', staples: DEFAULT_STAPLES.slice() } };
 }
 function fix(s) {
   const d = blank();
   const o = Object.assign(d, s && typeof s === 'object' ? s : {});
   o.settings = Object.assign(blank().settings, (s && s.settings) || {});
-  for (const k of ['lists', 'containers', 'recipes', 'trips']) if (!Array.isArray(o[k])) o[k] = [];
+  for (const k of ['lists', 'containers', 'recipes', 'meals', 'trips']) if (!Array.isArray(o[k])) o[k] = [];
   if (!o.catalog || typeof o.catalog !== 'object') o.catalog = {};
   if (!o.lists.length) o.lists = blank().lists;
   for (const l of o.lists) { l.items = Array.isArray(l.items) ? l.items : []; for (const i of l.items) i.srcs = Array.isArray(i.srcs) ? i.srcs : []; }
@@ -1044,7 +1104,7 @@ function joinSheet(code = '', fromLink = false) {
         try { r = await syncFetch(c, -1); }
         catch (err) { $('jOk').disabled = false; $('jOk').textContent = 'Join here'; return toast(navigator.onLine === false ? 'You’re offline — try again when you have signal' : `Couldn’t join: ${err.message}`, { err: true }); }
         if (!r.data) { $('jOk').disabled = false; $('jOk').textContent = 'Join here'; return toast('No household has that code. Check it, and that the other phone is online and sharing.', { err: true }); }
-        const hasStuff = S.lists.some(l => l.items.length) || S.containers.length || S.recipes.length || S.trips.length;
+        const hasStuff = S.lists.some(l => l.items.length) || S.containers.length || S.recipes.length || S.meals.length || S.trips.length;
         if (!hasStuff) { closeSheet(); return finishJoin(c, r, false); }
         openSheet({
           title: 'This phone already has lists',
@@ -1070,7 +1130,7 @@ function finishJoin(code, { rev, data }, keepMine) {
 // Joining with lists already on this phone: add them to the household's rather than lose them
 function combine(mine, theirs) {
   const out = clone(theirs);
-  out.lists = out.lists || []; out.containers = out.containers || []; out.recipes = out.recipes || []; out.trips = out.trips || [];
+  out.lists = out.lists || []; out.containers = out.containers || []; out.recipes = out.recipes || []; out.meals = out.meals || []; out.trips = out.trips || [];
   out.catalog = out.catalog || {}; out.settings = out.settings || {};
   for (const l of mine.lists) {
     const same = out.lists.find(x => norm(x.name) === norm(l.name));
@@ -1080,7 +1140,7 @@ function combine(mine, theirs) {
       if (ex) mergeQty(ex, i); else same.items.push(i);
     }
   }
-  for (const k of ['containers', 'recipes', 'trips']) for (const x of mine[k]) if (!out[k].some(y => y.id === x.id)) out[k].push(x);
+  for (const k of ['containers', 'recipes', 'meals', 'trips']) for (const x of mine[k]) if (!out[k].some(y => y.id === x.id)) out[k].push(x);
   out.trips.sort((a, b) => b.at - a.at);
   for (const [k, c] of Object.entries(mine.catalog)) {
     const o = own(out.catalog, k);
@@ -1297,6 +1357,7 @@ $('themeSeg').onclick = e => { const b = e.target.closest('[data-theme]'); if (b
 /* ================= Views ================= */
 const VIEWS = {
   lists: ['Shopping list', 'Tap items to tick them off as they go in the basket'],
+  plan: ['Meal plan', 'What you’re cooking this week'],
   containers: ['Containers', 'Groups of items you buy together'],
   recipes: ['Recipes', 'Import recipes from Claude and shop for the ingredients'],
   history: ['History', 'What you buy, and when'],
@@ -1323,7 +1384,7 @@ function render() {
   $('viewTitle').textContent = view === 'lists' ? cur().name : title;
   $('viewSub').textContent = sub;
   renderChip();
-  ({ lists: renderLists, containers: renderContainers, recipes: renderRecipes, history: renderHistory, settings: renderSettings })[view]();
+  ({ lists: renderLists, plan: renderPlan, containers: renderContainers, recipes: renderRecipes, history: renderHistory, settings: renderSettings })[view]();
 }
 function renderChip() {
   const l = cur(), left = l.items.filter(i => !i.done).length;
@@ -1715,9 +1776,11 @@ function pickRow(r, k, onList) {
 function listSelect(id) {
   return S.lists.length > 1 ? `<select class="input" id="${id}" aria-label="Add to which list">${S.lists.map(x => `<option value="${x.id}"${x.id === S.active ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : '';
 }
-function wirePicker(root, rows, btn, verb = 'Add') {
+// label(n) can return [html, disabled] to customise the button
+function wirePicker(root, rows, btn, verb = 'Add', label) {
   const count = () => {
     const n = rows.filter(r => r.checked).length;
+    if (label) { const [html, dis] = label(n); btn.innerHTML = html; btn.disabled = dis; return; }
     btn.disabled = !n;
     btn.innerHTML = `${ico('plus')}${n ? `${verb} ${plural(n, 'item')}` : 'Nothing ticked'}`;
   };
@@ -1737,6 +1800,7 @@ function wirePicker(root, rows, btn, verb = 'Add') {
     count();
   });
   count();
+  return count;
 }
 function openPicker({ title, intro = '', rows, src, emptyMsg = 'Nothing to add', grouped = false }) {
   const targetList = () => S.lists.find(x => x.id === ($('pkList') ? $('pkList').value : S.active)) || cur();
@@ -1765,6 +1829,104 @@ function openPicker({ title, intro = '', rows, src, emptyMsg = 'Nothing to add',
         save(); render();
         toast(addedMsg(res, S.lists.length > 1 ? l.name : ''), { undo: () => undoTo(snap, after) });
       };
+    },
+  });
+}
+
+/* ================= Meal plan ================= */
+let planWeek = mondayOf(todayIso());
+function planSelect(id, selected = '') {
+  // the week being viewed plus the one after, and whatever day is already chosen
+  const start = selected && mondayOf(selected) < planWeek ? mondayOf(selected) : planWeek < mondayOf(todayIso()) ? planWeek : mondayOf(todayIso());
+  const days = Array.from({ length: 14 }, (_, k) => addDays(start, k));
+  if (selected && !days.includes(selected)) days.push(selected);
+  const today = todayIso();
+  return `<select class="input" id="${id}" aria-label="Plan for which day"><option value="">Don’t add to the plan</option>${days.map(d =>
+    `<option value="${d}"${d === selected ? ' selected' : ''}>${esc(dayLabel(d, { weekday: 'long', day: 'numeric', month: 'short' }))}${d === today ? ' (today)' : ''}</option>`).join('')}</select>`;
+}
+const mealRecipe = m => m.rid && S.recipes.find(r => r.id === m.rid);
+const mealTitle = m => (mealRecipe(m) || m).title;
+function mealMeta(m) {
+  const r = mealRecipe(m);
+  if (!m.rid) return 'No recipe';
+  if (!r) return 'Recipe deleted';
+  return [r.serves ? `Serves ${fmtNum(m.serves)}` : m.serves !== 1 ? `×${fmtNum(m.serves)}` : '', r.time].filter(Boolean).join(' · ') || plural(r.ingredients.length, 'ingredient');
+}
+function renderPlan() {
+  const today = todayIso(), thisWeek = mondayOf(today), end = addDays(planWeek, 6);
+  const rel = planWeek === thisWeek ? 'This week' : planWeek === addDays(thisWeek, 7) ? 'Next week' : planWeek === addDays(thisWeek, -7) ? 'Last week' : 'Week of ' + dayLabel(planWeek, { day: 'numeric', month: 'short' });
+  const inWeek = S.meals.filter(m => m.date >= planWeek && m.date <= end);
+  $('weekTitle').textContent = rel;
+  $('weekSub').textContent = `${dayLabel(planWeek, { day: 'numeric', month: 'short' })} – ${dayLabel(end, { day: 'numeric', month: 'short' })} · ${inWeek.length ? plural(inWeek.length, 'meal') : 'nothing planned'}`;
+  $('weekToday').hidden = planWeek === thisWeek;
+  $('planDays').innerHTML = Array.from({ length: 7 }, (_, k) => {
+    const d = addDays(planWeek, k), meals = inWeek.filter(m => m.date === d);
+    return `<div class="card day${d === today ? ' today' : d < today ? ' past' : ''}" data-date="${d}">
+      <div class="day-h"><b>${esc(dayLabel(d, { weekday: 'long' }))}</b><small>${esc(dayLabel(d, { day: 'numeric', month: 'short' }))}</small>${d === today ? '<span class="badge info">Today</span>' : ''}</div>
+      ${meals.map(m => `<button class="meal${m.cooked ? ' cooked' : ''}" data-mid="${m.id}"><div class="cico" style="--c:${hueFor(mealTitle(m))}">${esc((mealTitle(m).trim()[0] || '?').toUpperCase())}</div>
+        <span class="lbl">${esc(mealTitle(m))}<small>${esc(mealMeta(m))}</small></span>${m.cooked ? `<span class="done-ico" title="Cooked">${ico('check')}</span>` : ''}</button>`).join('')}
+      <button class="linkbtn addmeal" data-act="add-meal">+ Add a meal</button>
+    </div>`;
+  }).join('');
+}
+$('v-plan').addEventListener('click', e => {
+  const a = e.target.closest('[data-act]');
+  if (a) {
+    if (a.dataset.act === 'week-prev') { planWeek = addDays(planWeek, -7); return renderPlan(); }
+    if (a.dataset.act === 'week-next') { planWeek = addDays(planWeek, 7); return renderPlan(); }
+    if (a.dataset.act === 'week-today') { planWeek = mondayOf(todayIso()); return renderPlan(); }
+    if (a.dataset.act === 'add-meal') return chooseMeal(a.closest('[data-date]').dataset.date);
+  }
+  const m = e.target.closest('[data-mid]');
+  if (m) openMeal(S.meals.find(x => x.id === m.dataset.mid));
+});
+function chooseMeal(date) {
+  openSheet({
+    title: `${dayLabel(date, { weekday: 'long', day: 'numeric', month: 'short' })}`,
+    body: `${S.recipes.length ? `<div class="sec"><span class="eyebrow">Pick a recipe</span></div>` + S.recipes.map(r => `<button class="pickrow" data-rid="${r.id}"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><span class="lbl">${esc(r.title)}<small>${esc(recipeMeta(r))}</small></span></button>`).join('')
+        : `<p style="margin-top:4px">You haven’t imported any recipes yet. Import some on the Recipes page, or just type a meal below.</p>`}
+      <div class="sec"><span class="eyebrow">Or just write it down</span></div>
+      <form id="fmForm" class="addrow" autocomplete="off"><input class="input" id="fmIn" placeholder="e.g. Leftovers, Takeaway, Out for dinner" aria-label="Meal"><button class="btn" type="submit">${ico('plus')}</button></form>`,
+    mount: b => {
+      b.onclick = e => { const r = e.target.closest('[data-rid]'); if (r) openRecipe(S.recipes.find(x => x.id === r.dataset.rid), true, date); };
+      $('fmForm').onsubmit = e => {
+        e.preventDefault();
+        const t = capFirst($('fmIn').value);
+        if (!t) return $('fmIn').focus();
+        closeSheet();
+        withUndo(`${t} planned for ${dayLabel(date, { weekday: 'long' })}`, () => { S.meals.push({ id: uid(), date, rid: '', title: t, serves: 1, cooked: false }); });
+      };
+    },
+  });
+}
+// The cooking view: ingredients scaled to the planned servings, then the method
+function openMeal(m) {
+  const r = mealRecipe(m);
+  const f = r ? m.serves / (r.serves || 1) : 1;
+  const ings = () => {
+    if (!r) return '';
+    let out = '', lastG = null;
+    for (const i of r.ingredients) {
+      if (i.group !== lastG) { if (i.group) out += `<div class="sec"><span class="eyebrow">${esc(i.group)}</span></div>`; lastG = i.group; }
+      out += `<div class="ing"><span class="qty">${esc(scaledQty(i, f))}</span><span class="nm">${esc(i.name)}${i.note ? `<small>${esc(i.note)}</small>` : ''}</span></div>`;
+    }
+    return out;
+  };
+  openSheet({
+    title: mealTitle(m), wide: true,
+    body: `<div class="rmeta" style="margin:0 0 10px"><span class="badge info">${esc(dayLabel(m.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</span>${r ? `<span>${esc(mealMeta(m))}</span>` : ''}${m.cooked ? '<span class="badge done">Cooked</span>' : ''}</div>
+      ${r && r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
+      ${r && r.ingredients.length ? `<div class="sec"><span class="eyebrow">Ingredients${r.serves ? ` for ${fmtNum(m.serves)}` : ''}</span></div><div class="ings">${ings()}</div>` : ''}
+      ${r ? methodHtml(r) : `<p class="muted">${m.rid ? 'This recipe has been deleted from your recipes.' : 'No recipe for this one — it’s just a note on the plan.'}</p>`}
+      <div class="sec"><span class="eyebrow">Plan</span></div>
+      <div class="actions"><label class="flabel" for="mDay">Move to</label>${planSelect('mDay', m.date).replace('<option value="">Don’t add to the plan</option>', '')}</div>
+      <div class="actions" style="margin-top:14px">${r ? `<button class="btn sm" id="mShop">${ico('basket')}Shop for it again</button>` : ''}<button class="btn sm danger" id="mDel">${ico('trash')}Remove from plan</button></div>`,
+    foot: `<div class="actions"><button class="btn" data-close>Close</button><button class="btn solid" id="mCook">${ico('check')}${m.cooked ? 'Not cooked yet' : 'Mark as cooked'}</button></div>`,
+    mount: () => {
+      $('mDay').onchange = () => { m.date = $('mDay').value; planWeek = mondayOf(m.date); save(); render(); openMeal(m); toast(`Moved to ${dayLabel(m.date, { weekday: 'long' })}`); };
+      $('mCook').onclick = () => { m.cooked = !m.cooked; save(); closeSheet(); render(); };
+      $('mDel').onclick = () => { closeSheet(); withUndo(`Removed ${mealTitle(m)} from the plan`, () => { S.meals = S.meals.filter(x => x.id !== m.id); }); };
+      if ($('mShop')) $('mShop').onclick = () => openRecipe(r, true);
     },
   });
 }
@@ -1965,7 +2127,7 @@ function chooseRecipe() {
   });
 }
 function scaledQty(i, f) { return f === 1 || i.num == null ? i.qty : buildQty(i.num * f, i.unit); }
-function openRecipe(r, shopOnly = false) {
+function openRecipe(r, shopOnly = false, planDate = '') {
   let serves = r.serves || 1;
   const base = r.serves || 1;
   const rows = r.ingredients.map(i => ({ ...i, checked: !(isStaple(i.name) || i.optional || /to taste/i.test(i.note)), badge: isStaple(i.name) ? 'staple' : i.optional ? 'optional' : '' }));
@@ -1986,15 +2148,22 @@ function openRecipe(r, shopOnly = false) {
     title: r.title, wide: true,
     body: `<div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, ...r.tags.map(t => `<span class="badge plain">${esc(t)}</span>`)].filter(Boolean).join('')}</div>
       ${!shopOnly && r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
+      <label class="plansel">${ico('calendar')}<span class="flabel">Meal plan</span>${planSelect('rDay', planDate)}</label>
       <div class="sec"><span class="eyebrow">Ingredients</span></div>
       <div class="toolbar" style="margin-bottom:4px">${scaler}<span class="grow"></span><button class="linkbtn" data-sel="all">Tick all</button><button class="linkbtn" data-sel="none">Untick all</button></div>
       <div id="rIng">${ingHtml()}</div>
       <p class="note">Unticked items won’t be added. Cupboard staples start unticked — change them in Settings.</p>
       ${shopOnly ? `<p style="margin:14px 0 0"><button class="linkbtn" id="rFull">Show the method and notes</button></p>` : methodHtml(r)}
       ${shopOnly ? '' : `<div class="actions" style="margin-top:18px"><button class="btn sm" id="rEdit">${ico('edit')}Edit</button><button class="btn sm" id="rDl">${ico('download')}Download .md</button><button class="btn sm danger" id="rDel">${ico('trash')}Delete</button></div>`}`,
-    foot: r.ingredients.length ? `${listSelect('pkList')}<div class="actions"><button class="btn" data-close>Close</button><button class="btn solid" id="rAdd"></button></div>` : `<div class="actions"><button class="btn" data-close>Close</button></div>`,
+    foot: `${r.ingredients.length ? listSelect('pkList') : ''}<div class="actions"><button class="btn" data-close>Close</button><button class="btn solid" id="rAdd"></button></div>`,
     mount: body => {
-      if (r.ingredients.length) wirePicker(body, rows, $('rAdd'));
+      const day = () => $('rDay').value;
+      const recount = wirePicker(body, rows, $('rAdd'), 'Add', n => {
+        const items = n ? plural(n, 'item') : '';
+        if (day()) return [`${ico('calendar')}${n ? `Plan & add ${items}` : `Plan for ${dayLabel(day(), { weekday: 'short' })}`}`, false];
+        return [`${ico('plus')}${n ? `Add ${items}` : 'Nothing ticked'}`, !n];
+      });
+      $('rDay').onchange = recount;
       body.addEventListener('click', e => {
         const s = e.target.closest('[data-sc]');
         if (!s) return;
@@ -2011,11 +2180,19 @@ function openRecipe(r, shopOnly = false) {
         const f = serves / base;
         const l = S.lists.find(x => x.id === ($('pkList') ? $('pkList').value : S.active)) || cur();
         const picked = rows.filter(x => x.checked).map(x => ({ name: x.name, qty: scaledQty(x, f), num: x.num != null ? x.num * f : null, unit: x.unit, note: '' }));
+        const date = day();
         closeSheet();
         const snap = JSON.stringify(S);
-        const res = addEntries(l, picked, r.title), after = JSON.stringify(S);
+        const res = addEntries(l, picked, r.title);
+        let msg = picked.length ? addedMsg(res, S.lists.length > 1 ? l.name : '') : '';
+        if (date) {
+          S.meals.push({ id: uid(), date, rid: r.id, title: r.title, serves, cooked: false });
+          planWeek = mondayOf(date);
+          msg = [`Planned for ${dayLabel(date, { weekday: 'long' })}`, msg].filter(Boolean).join(' · ');
+        }
+        const after = JSON.stringify(S);
         save(); render();
-        toast(addedMsg(res, S.lists.length > 1 ? l.name : ''), { undo: () => undoTo(snap, after) });
+        toast(msg, { undo: () => undoTo(snap, after) });
       };
     },
   });
@@ -2133,7 +2310,7 @@ $('v-settings').addEventListener('click', e => {
     return toast('Backup saved');
   }
   if (a.dataset.act === 'erase') {
-    return confirmSheet({ title: 'Erase everything?', text: `This deletes all your lists, containers, recipes and history from this ${Y ? 'phone, and from every phone sharing with it' : 'device'}. Save a backup first if you might want them back.`, ok: 'Erase everything', danger: true, onOk: () => {
+    return confirmSheet({ title: 'Erase everything?', text: `This deletes all your lists, meal plans, containers, recipes and history from this ${Y ? 'phone, and from every phone sharing with it' : 'device'}. Save a backup first if you might want them back.`, ok: 'Erase everything', danger: true, onOk: () => {
       const theme = S.settings.theme; S = blank(); S.settings.theme = theme; save(); render(); toast('Everything erased'); } });
   }
 });
