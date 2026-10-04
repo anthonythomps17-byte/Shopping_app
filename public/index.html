@@ -314,6 +314,7 @@ select.input{appearance:auto}
 .qty{font-family:var(--mono);color:var(--brand-ink);font-weight:750}
 .src{background:var(--surface-3);color:var(--text-2);border-radius:999px;padding:0 8px;font-size:11px;font-weight:700;line-height:1.7}
 .item .price{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--text-2);white-space:nowrap}
+.item .price.est{color:var(--muted);font-weight:600}
 .item.done .ibody b{text-decoration:line-through;color:var(--muted)}
 .item.done .qty,.item.done .price{color:var(--muted)}
 .basket .grp-h i{background:var(--success)}
@@ -352,8 +353,9 @@ select.input{appearance:auto}
 .day-h b{font-size:14px;font-weight:750}
 .day-h small{color:var(--muted);font-size:12px;font-weight:650}
 .day-h .badge{margin-left:auto}
-.meal{display:flex;align-items:center;gap:11px;width:100%;padding:8px 6px;border:none;background:none;border-radius:11px;text-align:left;min-width:0}
+.meal{display:flex;align-items:center;gap:2px;border-radius:11px;min-width:0}
 .meal:hover{background:var(--surface-2)}
+.mopen{display:flex;align-items:center;gap:11px;flex:1;min-width:0;padding:8px 6px;border:none;background:none;border-radius:11px;text-align:left}
 .meal .cico{width:36px;height:36px;font-size:15px;border-radius:10px}
 .meal .lbl{flex:1;min-width:0;font-weight:650;font-size:14px;line-height:1.3}
 .meal .lbl small{display:block;font-size:11.5px;color:var(--muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -371,6 +373,13 @@ select.input{appearance:auto}
 .actions select.input{width:auto;flex:1;min-width:180px;padding:8px 10px;font-size:14px}
 .plansel svg{width:18px;height:18px;color:var(--brand-ink)}
 .plansel select.input{width:auto;flex:1;min-width:150px;padding:8px 10px;font-size:14px;background:var(--surface)}
+.ideas h3 svg{width:18px;height:18px;color:var(--brand-ink)}
+.idea{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--surface-3)}
+.idea .cico{width:36px;height:36px;font-size:15px;border-radius:10px}
+.idea .lbl{flex:1;min-width:0;font-weight:650;font-size:14px;line-height:1.35}
+.idea .lbl small{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-top:1px}
+.idea .lbl small b{color:var(--success);font-weight:750}
+.costline{font-size:13px;font-weight:650;color:var(--text-2);margin:10px 0 0}
 
 /* ============ History ============ */
 .rows{display:flex;flex-direction:column}
@@ -612,6 +621,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
               <button data-group="none">A–Z</button>
             </div>
             <span class="grow"></span>
+            <button class="pill" id="tickAllBtn" data-act="tick-all" hidden><svg><use href="#i-check"/></svg>Tick all</button>
             <button class="pill" id="wakeBtn" data-act="wake" hidden><svg><use href="#i-screen"/></svg>Keep screen on</button>
           </div>
           <div class="stack" id="listGroups"></div>
@@ -628,6 +638,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
             <span class="grow"></span>
             <button class="btn sm" data-act="week-today" id="weekToday">This week</button>
           </div>
+          <div id="planIdeas"></div>
           <div class="days" id="planDays"></div>
         </div>
       </section>
@@ -690,6 +701,14 @@ details.trip[open] summary::after{transform:rotate(90deg)}
               <div class="seg" id="themeSeg">
                 <button data-theme="auto">Auto</button><button data-theme="light">Light</button><button data-theme="dark">Dark</button>
               </div>
+            </div>
+            <div class="card">
+              <h3>Cost estimates</h3>
+              <p class="note" style="margin:0 0 12px">Lists, recipes and meals show a rough cost using typical UK supermarket prices. A price you type in for an item always wins.</p>
+              <div class="seg" id="priceSeg">
+                <button data-price="budget">Budget</button><button data-price="std">Standard</button><button data-price="premium">Premium</button><button data-price="off">Off</button>
+              </div>
+              <p class="note" id="priceNote"></p>
             </div>
             <div class="card">
               <h3>Cupboard staples</h3>
@@ -788,7 +807,7 @@ const RULES = [
   ['bakery', 'garlic bread'],
   ['fruitveg', 'butternut|acorn squash'],
   ['snacks', 'crisps|chocolate|biscuits?|sweets|popcorn|cookies?|haribo|cereal bars?|flapjacks?|doughnuts?|donuts?'],
-  ['drinks', 'juice|cola|coke|lemonade|beer|lager|wine|cider|gin\\b|vodka|whisk(e)?y|rum\\b|fizzy|smoothie|sparkling water|still water|bottled water|mineral water|squash\\b|tonic|coffee|tea\\b|teabags|tea bags|energy drink'],
+  ['drinks', 'juice|cola|coke|lemonade|beer|lager|wine|cider|gin\\b|vodka|whisk(e)?y|rum\\b|fizzy|smoothie|sparkling water|still water|bottled water|mineral water|squash\\b|tonic|coffee|tea\\b|teabags|tea bags|energy drink|brandy|cognac|sherry|prosecco'],
   ['meat', 'chicken|beef|pork|lamb|mince|sausages?|bacon|ham\\b|turkey|steaks?|salmon|cod\\b|tuna|prawns?|fish|haddock|mackerel|chorizo|duck|gammon|burgers?|meatballs|salami|pepperoni|sea ?bass|trout|venison|kebab|pancetta|prosciutto'],
   ['dairy', 'milk|butter|cheese|cheddar|mozzarella|parmesan|feta|halloumi|brie|yog(h)?urt|cream|eggs?\\b|cr[eè]me fra[iî]che|custard|ghee|quark|skyr|kefir|ricotta|mascarpone'],
   ['bakery', 'bread|loaf|rolls?\\b|bagels?|croissants?|wraps?\\b|tortillas?|pittas?|naan|muffins?|crumpets?|baguette|brioche|cakes?\\b|buns?\\b|sourdough|scones?|pancakes|pastries'],
@@ -830,7 +849,7 @@ function buildQty(num, unit) {
   if (!unit || /^x$/i.test(unit)) return n;
   return n + (TIGHT_UNITS.test(unit) ? '' : ' ') + unit;
 }
-const unitKey = u => { u = norm(u); if (!u || u === 'x') return ''; return ({ gram: 'g', grams: 'g', gm: 'g', litre: 'l', litres: 'l', liter: 'l', liters: 'l', tablespoon: 'tbsp', tablespoons: 'tbsp', tbsps: 'tbsp', teaspoon: 'tsp', teaspoons: 'tsp', tsps: 'tsp', lbs: 'lb' })[u] || u.replace(/(es|s)$/, ''); };
+const unitKey = u => { u = norm(u); if (!u || u === 'x') return ''; return ({ gram: 'g', grams: 'g', gm: 'g', litre: 'l', litres: 'l', liter: 'l', liters: 'l', tablespoon: 'tbsp', tablespoons: 'tbsp', tbsps: 'tbsp', teaspoon: 'tsp', teaspoons: 'tsp', tsps: 'tsp', lbs: 'lb' })[u] || u.replace(/(ch|sh|x)es$/, '$1').replace(/s$/, ''); };
 // "2 x milk", "400g chicken", "milk x2", "½ tsp salt" → { name, qty, num, unit }
 function parseQty(text) {
   const s = String(text ?? '').trim().replace(/\s+/g, ' ');
@@ -859,12 +878,161 @@ function mergeQty(item, add) {
   item.qty += ' + ' + add.qty; item.num = null;
 }
 
+/* ================= Prices ================= */
+// Rough UK supermarket prices (Tesco and Sainsbury's level, 2025–26) for cost
+// estimates, and pack sizes for spotting what a meal will leave over. Checked in
+// order, so the more specific names come first ("chicken stock" before "chicken").
+// [name, £ for a pack, pack size, what the size is in (g, ml or each), extras]
+// Extras: ea = g or ml in one ("2 chicken breasts"), sub = small pieces in one
+// (cloves in a bulb of garlic), loose = sold by weight or singly so nothing's left
+// over, keeps = lasts for weeks, so leftovers don't count as waste.
+const PRICES = [
+  ['toilet (roll|paper|tissue)', 4.50, 9, 'each'], ['kitchen (roll|towel)', 2.50, 2, 'each'], ['washing.?up', 1.20, 450, 'ml'],
+  ['dishwasher', 4.00, 30, 'each'], ['laundry|washing (powder|liquid|pods|capsules)|detergent', 6.00, 1, 'each'],
+  ['fabric (softener|conditioner)', 3.00, 1, 'each'], ['bin (bags?|liners?)', 2.00, 1, 'each'], ['foil|cling ?film|baking paper', 1.50, 1, 'each'],
+  ['bleach|cleaner|sponges?|cloths', 1.25, 1, 'each'], ['shampoo|conditioner|shower gel|body wash', 2.50, 1, 'each'], ['toothpaste', 1.50, 1, 'each'],
+  ['deodorant', 2.50, 1, 'each'], ['hand ?wash|soap', 1.20, 1, 'each'], ['paracetamol|ibuprofen', 0.60, 1, 'each'],
+  ['cat food|dog food|pet food', 4.50, 1, 'each'], ['bird ?seed|parrot (food|seed)|seed mix', 4.00, 1, 'each'],
+  // things whose names contain other things
+  ['stock', 1.00, 10, 'each', { ea: 500 }], ['coconut milk', 0.95, 400, 'ml'], ['coconut cream', 0.85, 160, 'ml'], ['peanut butter', 2.00, 340, 'g'],
+  ['butter beans|chickpeas|kidney beans|black beans|cannellini|haricot|borlotti|baked beans|mixed beans', 0.65, 400, 'g'],
+  ['chopped tomatoes|plum tomatoes|tinned tomatoes|canned tomatoes', 0.50, 400, 'g'], ['tomato (pur[eé]e|paste)', 0.60, 200, 'g'],
+  ['passata', 0.75, 500, 'g'], ['sun.?dried tomato', 2.00, 280, 'g'], ['sweetcorn', 0.65, 325, 'g'],
+  ['tuna steaks?', 4.50, 2, 'each', { ea: 125 }], ['tuna', 1.10, 145, 'g'], ['egg noodles|rice noodles|udon|noodles', 1.10, 300, 'g'],
+  ['fresh pasta|tortellini|ravioli|gnocchi', 2.00, 300, 'g'], ['mangetout|sugar.?snap', 1.10, 150, 'g'],
+  ['lemon juice|lime juice', 0.70, 250, 'ml', { keeps: 1 }], ['orange juice|apple juice|juice', 1.60, 1000, 'ml'],
+  // herbs, spices and sauces
+  ['black pepper|peppercorns|white pepper', 1.20, 50, 'g'], ['salt', 0.65, 750, 'g'],
+  ['ground (?!beef|pork|lamb|turkey|chicken)|dried |paprika|cumin|turmeric|cinnamon|chill?i (powder|flakes)|garam masala|curry powder|coriander seeds|oregano|mixed herbs|nutmeg|cayenne|garlic (granules|powder)|onion (granules|powder)|five spice|bay leaves|cardamom|fennel seeds|mustard seeds|cajun|fajita seasoning|seasoning|allspice|star anise|sumac|mixed spice', 1.00, 40, 'g'],
+  ['balsamic', 1.50, 250, 'ml'], ['vinegar', 1.20, 350, 'ml'], ['soy sauce|soya sauce', 1.30, 250, 'ml'], ['fish sauce', 1.50, 200, 'ml'],
+  ['oyster sauce|hoisin|teriyaki', 1.40, 250, 'ml'], ['sweet chilli sauce|sriracha|hot sauce|tabasco', 1.50, 250, 'ml'], ['worcestershire', 1.20, 150, 'ml'],
+  ['ketchup', 1.75, 460, 'g'], ['mayo', 1.75, 400, 'g'], ['dijon|mustard', 1.00, 185, 'g'], ['curry paste|thai (red|green) paste', 1.60, 190, 'g'],
+  ['curry sauce|tikka masala sauce|korma sauce|pasta sauce|bolognese sauce|stir.?fry sauce', 1.40, 450, 'g'],
+  ['gravy', 1.30, 170, 'g'], ['pesto', 1.70, 190, 'g'], ['salsa', 1.25, 300, 'g'],
+  // cupboard
+  ['vanilla', 2.00, 38, 'ml'], ['baking powder|bicarbonate|bicarb|yeast', 1.00, 100, 'g'], ['cornflour', 1.10, 250, 'g'],
+  ['breadcrumbs|panko', 1.20, 200, 'g'], ['flour', 0.90, 1500, 'g'], ['sugar', 1.20, 1000, 'g'], ['honey', 1.60, 340, 'g'],
+  ['maple syrup', 3.00, 250, 'ml'], ['syrup', 1.60, 454, 'g'], ['olive oil', 4.50, 500, 'ml'], ['sesame oil', 2.20, 250, 'ml'],
+  ['coconut oil', 3.00, 300, 'ml'], ['oil', 2.00, 1000, 'ml'], ['microwave rice|rice pouch', 1.10, 250, 'g'], ['risotto rice|arborio', 1.60, 500, 'g'],
+  ['rice', 1.80, 1000, 'g'], ['lasagne', 1.00, 250, 'g'], ['spaghetti|penne|fusilli|linguine|tagliatelle|rigatoni|macaroni|farfalle|orzo|pasta', 0.80, 500, 'g'],
+  ['couscous', 1.00, 500, 'g'], ['quinoa', 2.50, 300, 'g'], ['lentils', 1.30, 500, 'g'], ['porridge|oats', 1.00, 1000, 'g'],
+  ['cereal|cornflakes|granola|muesli|weetabix', 2.00, 500, 'g'], ['pine nuts', 2.50, 100, 'g'],
+  ['cashews|almonds|walnuts|peanuts|pecans|hazelnuts|pistachios|nuts\\b', 2.00, 200, 'g'], ['sesame seeds|chia|seeds', 1.20, 100, 'g'],
+  ['raisins|sultanas|dried fruit', 1.20, 500, 'g'], ['olives', 1.20, 340, 'g'], ['capers', 1.00, 100, 'g'], ['jam\\b|marmalade', 1.00, 454, 'g'],
+  ['tahini', 2.50, 300, 'g'], ['cocoa', 2.50, 250, 'g'], ['chocolate', 1.20, 100, 'g'], ['crisps', 1.80, 6, 'each'],
+  ['biscuits?|cookies', 1.00, 300, 'g'], ['crackers', 1.00, 200, 'g'],
+  // chilled and dairy
+  ['hummus|houmous', 1.10, 200, 'g'], ['tofu', 1.50, 280, 'g'], ['guacamole', 1.50, 150, 'g'], ['tzatziki', 1.20, 200, 'g'],
+  ['coleslaw', 1.00, 300, 'g'], ['pastry', 1.50, 320, 'g'], ['ice cream', 2.50, 1000, 'ml'], ['buttermilk', 0.85, 284, 'ml'],
+  ['butter\\b', 2.40, 250, 'g', { keeps: 1 }], ['cream cheese|soft cheese', 1.10, 180, 'g'], ['soured cream|sour cream', 0.95, 300, 'ml'],
+  ['cr[eè]me fra[iî]che', 1.10, 300, 'ml'], ['cream\\b', 1.35, 300, 'ml'],
+  ['parmesan|parmigiano|grana padano|pecorino', 2.50, 150, 'g', { keeps: 1 }], ['mozzarella', 0.80, 125, 'g', { ea: 125 }],
+  ['feta', 1.40, 200, 'g'], ['halloumi', 2.50, 225, 'g'], ['brie|camembert', 1.80, 200, 'g'], ['goats? cheese', 1.60, 125, 'g'],
+  ['ricotta', 1.25, 250, 'g'], ['mascarpone', 1.40, 250, 'g'], ['paneer', 2.25, 226, 'g'], ['cottage cheese', 1.10, 300, 'g'],
+  ['cheddar|cheese', 2.90, 400, 'g', { ea: 20, keeps: 1 }], ['yog(h)?urt', 1.20, 500, 'g'], ['eggs?\\b', 1.85, 6, 'each', { ea: 60, keeps: 1 }],
+  ['oat milk|almond milk|soya milk|soy milk|oat drink', 1.50, 1000, 'ml'], ['milk', 1.15, 1136, 'ml', { keeps: 1 }], ['custard', 1.00, 500, 'g'],
+  // frozen
+  ['frozen chips|oven chips|chips\\b', 2.00, 1500, 'g'], ['hash browns', 1.50, 750, 'g'], ['fish fingers', 2.00, 10, 'each'],
+  ['frozen peas|petits pois|peas\\b', 1.30, 900, 'g'], ['frozen (mixed )?veg|frozen berries|frozen fruit|frozen spinach', 1.75, 750, 'g'], ['pizza', 2.00, 1, 'each'],
+  // bakery
+  ['garlic bread', 1.00, 1, 'each'], ['tortillas?|wraps?\\b', 1.10, 8, 'each'], ['pittas?', 0.65, 6, 'each'], ['naan', 1.10, 2, 'each'],
+  ['bagels?', 1.20, 5, 'each'], ['crumpets?', 0.75, 6, 'each'], ['croissants?', 1.30, 4, 'each'], ['muffins?', 1.00, 4, 'each'],
+  ['buns?\\b|rolls?\\b|baps?\\b', 1.00, 6, 'each'], ['baguette', 0.75, 1, 'each'], ['sourdough', 2.00, 1, 'each', { sub: 14 }],
+  ['bread|loaf', 1.30, 1, 'each', { sub: 20 }],
+  // fish and meat
+  ['smoked salmon', 2.50, 100, 'g'], ['salmon', 3.75, 2, 'each', { ea: 120 }], ['cod|haddock|pollock|hake|basa|white fish', 4.25, 2, 'each', { ea: 130 }],
+  ['sea ?bass|sea ?bream|trout', 4.50, 2, 'each', { ea: 100 }], ['mackerel', 2.25, 200, 'g'], ['prawns?|shrimps?', 3.25, 180, 'g'],
+  ['pork mince|minced pork|ground pork', 2.80, 500, 'g'], ['lamb mince|minced lamb|ground lamb', 4.50, 500, 'g'],
+  ['turkey mince|chicken mince|ground turkey|ground chicken', 3.50, 500, 'g'], ['mince\\b|minced beef|ground beef', 3.20, 500, 'g'],
+  ['chicken thighs?', 5.50, 1000, 'g', { ea: 120, loose: 1 }], ['chicken (drumsticks?|legs?|wings?)', 3.50, 1000, 'g', { ea: 120, loose: 1 }],
+  ['whole chicken', 5.00, 1, 'each'], ['chicken', 6.50, 1000, 'g', { ea: 160, loose: 1 }],
+  ['sirloin', 25, 1000, 'g', { ea: 225, loose: 1 }], ['rib.?eye', 30, 1000, 'g', { ea: 250, loose: 1 }], ['fillet steak|beef fillet', 45, 1000, 'g', { ea: 200, loose: 1 }],
+  ['rump', 16, 1000, 'g', { ea: 225, loose: 1 }], ['flank|bavette|skirt|hanger', 16, 1000, 'g', { ea: 300, loose: 1 }],
+  ['stewing steak|braising steak|diced beef|brisket|beef shin', 11, 1000, 'g', { loose: 1 }], ['steaks?\\b', 20, 1000, 'g', { ea: 225, loose: 1 }],
+  ['beef', 12, 1000, 'g', { loose: 1 }], ['sausages?', 2.50, 8, 'each', { ea: 57 }], ['chorizo', 2.25, 225, 'g'], ['pancetta|lardons', 2.00, 130, 'g'],
+  ['bacon', 2.30, 10, 'each', { ea: 30 }], ['prosciutto|parma ham|serrano|salami|pepperoni', 2.00, 90, 'g'], ['gammon', 7, 1000, 'g', { loose: 1 }],
+  ['ham\\b', 1.60, 125, 'g', { ea: 25 }], ['pork belly', 8, 1000, 'g', { loose: 1 }], ['pork', 7, 1000, 'g', { ea: 180, loose: 1 }],
+  ['lamb', 13, 1000, 'g', { ea: 100, loose: 1 }], ['turkey', 9, 1000, 'g', { loose: 1 }], ['duck', 14, 1000, 'g', { ea: 180, loose: 1 }],
+  ['burgers?', 2.50, 4, 'each'], ['meatballs?', 2.50, 12, 'each'],
+  // fruit and veg
+  ['sweet potato', 1.20, 1000, 'g', { ea: 250, loose: 1, keeps: 1 }], ['new potato|baby potato|salad potato', 1.10, 1000, 'g', { ea: 40, keeps: 1 }],
+  ['potato', 1.60, 2500, 'g', { ea: 200, keeps: 1 }], ['spring onions?|salad onions?', 0.55, 8, 'each'], ['red onions?', 0.85, 3, 'each', { ea: 160, keeps: 1 }],
+  ['shallots?', 1.00, 300, 'g', { ea: 30, keeps: 1 }], ['onions?', 0.85, 3, 'each', { ea: 160, keeps: 1 }], ['garlic', 0.30, 1, 'each', { sub: 10, keeps: 1 }],
+  ['ginger', 5.00, 1000, 'g', { ea: 30, loose: 1, keeps: 1 }], ['carrots?', 0.55, 1000, 'g', { ea: 80, keeps: 1 }],
+  ['tenderstem|long.?stem broccoli', 1.75, 200, 'g'], ['broccoli|calabrese', 0.69, 1, 'each', { ea: 350 }], ['cauliflower', 1.00, 1, 'each', { ea: 600 }],
+  ['cabbage', 0.80, 1, 'each', { ea: 800 }], ['butternut', 1.10, 1, 'each', { ea: 1000, keeps: 1 }], ['lettuce|little gems?|iceberg|romaine', 0.75, 1, 'each'],
+  ['rocket', 1.00, 60, 'g'], ['salad|leaves', 1.00, 120, 'g'], ['spinach', 1.45, 240, 'g'], ['kale|cavolo nero', 1.00, 200, 'g'],
+  ['chill?i(es|s)?\\b', 0.65, 4, 'each'], ['peppers?\\b', 0.65, 1, 'each', { ea: 160 }], ['cherry tomato|baby plum tomato', 1.10, 250, 'g', { ea: 15 }],
+  ['tomato', 0.85, 6, 'each', { ea: 90 }], ['cucumber', 0.75, 1, 'each'], ['courgettes?', 0.45, 1, 'each', { ea: 250 }],
+  ['aubergines?', 0.85, 1, 'each', { ea: 300 }], ['mushroom', 1.00, 300, 'g', { ea: 20 }], ['celery', 0.70, 1, 'each', { sub: 8 }],
+  ['leeks?', 0.55, 1, 'each', { ea: 200 }], ['parsnips?', 0.75, 500, 'g', { ea: 120, keeps: 1 }], ['beetroot', 0.80, 250, 'g'],
+  ['avocados?', 0.80, 1, 'each'], ['asparagus', 2.00, 250, 'g'], ['green beans|fine beans|runner beans', 1.10, 220, 'g'],
+  ['pak choi|bok choy', 1.20, 200, 'g'], ['beansprouts', 0.80, 300, 'g'], ['corn on the cob', 1.00, 2, 'each'], ['lemongrass', 0.90, 2, 'each'],
+  ['coriander|cilantro|parsley|basil|mint\\b|dill|chives|tarragon|thyme|rosemary|sage\\b|herbs', 0.75, 30, 'g'],
+  ['lemons?', 0.35, 1, 'each', { keeps: 1 }], ['limes?', 0.30, 1, 'each', { keeps: 1 }], ['apples?', 1.50, 6, 'each', { keeps: 1 }],
+  ['bananas?', 0.85, 5, 'each'], ['oranges?', 0.40, 1, 'each', { keeps: 1 }],
+  ['easy peelers?|clementines?|satsumas?|tangerines?|mandarins?', 1.60, 600, 'g', { ea: 70, keeps: 1 }], ['pears?\\b', 0.40, 1, 'each'],
+  ['grapes', 1.75, 500, 'g'], ['strawberr', 2.00, 400, 'g'], ['blueberr|raspberr|blackberr', 1.75, 150, 'g'], ['mangos?|mangoes', 1.00, 1, 'each'],
+  ['pineapple', 1.25, 1, 'each'], ['melon', 1.50, 1, 'each'], ['kiwi', 0.25, 1, 'each'],
+  // drinks
+  ['brandy|cognac', 15, 700, 'ml'], ['wine|prosecco', 6.50, 750, 'ml'], ['beer|lager|ale\\b', 5.00, 4, 'each'], ['cider', 4.50, 4, 'each'],
+  ['gin\\b|vodka|whisk(e)?y|rum\\b', 17, 700, 'ml'], ['cola|coke|lemonade|fizzy', 1.80, 2000, 'ml'], ['squash\\b', 1.50, 1000, 'ml'],
+  ['tonic', 1.20, 1000, 'ml'], ['sparkling water|still water|bottled water|mineral water', 0.60, 2000, 'ml'], ['tea ?bags|tea\\b', 2.50, 80, 'each'],
+  ['coffee', 4.00, 200, 'g'],
+].map(([pat, price, size, unit, x]) => ({ id: pat, rx: new RegExp('(?:^|[^a-z])(?:' + pat + ')', 'i'), price, size, unit, ...x }));
+const productMemo = new Map();
+function productFor(name) {
+  const k = norm(name);
+  if (!productMemo.has(k)) productMemo.set(k, PRICES.find(p => p.rx.test(' ' + k)) || null);
+  return productMemo.get(k);
+}
+// Ways of measuring an amount: [g, ml or each, how many]
+const MEASURES = { g: ['g', 1], kg: ['g', 1000], mg: ['g', .001], oz: ['g', 28.35], lb: ['g', 453.6], handful: ['g', 25],
+  ml: ['ml', 1], l: ['ml', 1000], cl: ['ml', 10], pint: ['ml', 568], tbsp: ['ml', 15], tsp: ['ml', 5], cup: ['ml', 240], pinch: ['ml', .5], dozen: ['each', 12] };
+const PACKS = new Set(['tin', 'can', 'pack', 'packet', 'bag', 'jar', 'bottle', 'box', 'pot', 'bunch', 'head']);
+// How much of a product an amount is, in the product's own units (g, ml or pieces).
+// No amount means one pack.
+function needOf(p, num, unit) {
+  if (num == null || !(num > 0)) return p.size;
+  const u = unitKey(unit), m = MEASURES[u];
+  if (m && m[0] !== 'each') { const amt = num * m[1]; return p.unit !== 'each' ? amt : p.ea ? amt / p.ea : p.size; }
+  if (m) num *= m[1];
+  if (PACKS.has(u)) return num * p.size;
+  if (p.sub && u) return num / p.sub; // cloves of garlic, sticks of celery, slices of bread
+  return p.unit === 'each' ? num : num * (p.ea || p.size);
+}
+const packsFor = (p, need) => p.loose ? need / p.size : Math.max(1, Math.ceil(need / p.size - .05));
+const LEVELS = { budget: .85, std: 1, premium: 1.3 };
+const pricesOn = () => S.settings.prices !== 'off';
+// { cost: what you'd pay at the till (whole packs), used: what the amount itself is worth }
+function estimate(name, num, unit, qty) {
+  const p = pricesOn() && productFor(name);
+  if (!p) return null;
+  const need = num == null && / \+ /.test(qty || '')
+    ? qty.split(' + ').reduce((a, q) => { const x = parseQtyOnly(q); return a + needOf(p, x.num, x.unit); }, 0)
+    : needOf(p, num, unit);
+  const f = LEVELS[S.settings.prices] || 1;
+  return { cost: packsFor(p, need) * p.price * f, used: need / p.size * p.price * f };
+}
+// A list line's price: the one you typed in, or an estimate
+function lineCost(i) {
+  if (i.price != null) return { v: i.price, est: false };
+  const e = estimate(i.name, i.num, i.unit, i.qty);
+  return e ? { v: e.cost, est: true } : null;
+}
+function itemsCost(items) {
+  let total = 0, est = false, missing = 0;
+  for (const i of items) { const c = lineCost(i); if (c) { total += c.v; est = est || c.est; } else missing++; }
+  return { total, est, missing, priced: items.length - missing };
+}
+const money = c => (c.est ? '≈ ' : '') + gbp(c.total);
+
 /* ================= State ================= */
 const DEFAULT_STAPLES = ['Salt', 'Black pepper', 'Pepper', 'Water', 'Olive oil', 'Vegetable oil', 'Sunflower oil'];
 function blank() {
   const list = { id: uid(), name: 'Shopping', items: [], created: Date.now() };
   return { v: 1, lists: [list], active: list.id, containers: [], recipes: [], meals: [], catalog: {}, trips: [],
-    settings: { theme: 'auto', groupBy: 'aisle', staples: DEFAULT_STAPLES.slice() } };
+    settings: { theme: 'auto', groupBy: 'aisle', staples: DEFAULT_STAPLES.slice(), prices: 'std' } };
 }
 function fix(s) {
   const d = blank();
@@ -1318,7 +1486,7 @@ A quick weeknight stir fry with a sticky soy and honey sauce.
 - Swap the chicken for prawns or tofu.
 - Keeps in the fridge for 2 days.
 `;
-const CLAUDE_PROMPT = `Please write a recipe for [DISH] as a Markdown (.md) file I can import into my shopping list app. Use exactly this layout:
+const claudePrompt = (ask = 'Please write a recipe for [DISH] as a Markdown (.md) file I can import into my shopping list app.') => `${ask} Use exactly this layout:
 
 # Recipe name
 Serves: 4
@@ -1340,6 +1508,7 @@ One or two sentences about the dish.
 - Tips, swaps or storage.
 
 Rules: one ingredient per bullet, with the quantity first (UK units like g, ml, tbsp, tsp), then the ingredient name, then any preparation after a comma. You can group ingredients under ### sub-headings such as "### For the sauce". Give me the file to download, named after the recipe.`;
+const CLAUDE_PROMPT = claudePrompt();
 
 /* ================= Theme ================= */
 function applyTheme() {
@@ -1403,23 +1572,24 @@ function renderLists() {
   }).join('') + `<button class="lchip add" data-act="new-list">${ico('plus')}New list</button>`;
   renderHero();
   document.querySelectorAll('#groupSeg button').forEach(b => b.classList.toggle('on', b.dataset.group === S.settings.groupBy));
+  $('tickAllBtn').hidden = l.items.filter(i => !i.done).length < 2;
   $('wakeBtn').hidden = !('wakeLock' in navigator);
   $('wakeBtn').classList.toggle('on', wantWake);
   renderGroups();
 }
 function renderHero() {
   const l = cur(), all = l.items, done = all.filter(i => i.done), left = all.length - done.length;
-  const priced = all.filter(i => i.price != null);
-  const est = priced.reduce((a, i) => a + i.price, 0), inBasket = done.filter(i => i.price != null).reduce((a, i) => a + i.price, 0);
+  const cost = itemsCost(all), inBasket = itemsCost(done);
   const pct = all.length ? Math.round(done.length / all.length * 100) : 0;
+  const costPill = cost.priced ? `<span class="hero-pill" title="${cost.est ? 'Estimated from typical supermarket prices' : 'From the prices you’ve added'}">${money(cost)}</span>` : '';
+  const unpriced = cost.priced && cost.missing ? `<span>${plural(cost.missing, 'item')} not priced</span>` : '';
   let big, meta;
   if (!all.length) { big = 'Empty'; meta = '<span>Add items below, or pull in a container or recipe.</span>'; }
-  else if (!left) { big = 'All done'; meta = `<span class="hero-pill">${plural(all.length, 'item')}</span><span>Everything’s in the basket. Finish the shop to save it to your history.</span>`; }
+  else if (!left) { big = 'All done'; meta = `<span class="hero-pill">${plural(all.length, 'item')}</span>${costPill}<span>Everything’s in the basket. Finish the shop to save it to your history.</span>`; }
   else {
     big = `${left}<small>to get</small>`;
-    meta = `<span class="hero-pill">${plural(all.length, 'item')}</span><span>${done.length} in the basket</span>`;
+    meta = `<span class="hero-pill">${plural(all.length, 'item')}</span>${costPill}<span>${done.length} in the basket${done.length && inBasket.priced ? ` · ${money(inBasket)}` : ''}</span>${unpriced}`;
   }
-  if (priced.length) meta += `<span>Est. ${gbp(est)}${done.length && inBasket ? ` · ${gbp(inBasket)} in basket` : ''}</span>`;
   $('listHero').innerHTML = `
     <div class="hero-top">
       <div><div class="eyebrow">${esc(l.name)}</div><div class="hero-net">${big}</div><div class="hero-meta">${meta}</div></div>
@@ -1435,10 +1605,12 @@ function itemRow(i) {
   if (i.qty) bits.push(`<span class="qty">${esc(i.qty)}</span>`);
   if (i.note) bits.push(`<span>${esc(i.note)}</span>`);
   for (const s of i.srcs || []) bits.push(`<span class="src">${esc(s)}</span>`);
+  const c = lineCost(i);
+  const price = c ? `<span class="price${c.est ? ' est' : ''}"${c.est ? ' title="Estimate"' : ''}>${c.est ? '~' : ''}${gbp(c.v)}</span>` : '';
   return `<div class="item${i.done ? ' done' : ''}" data-id="${i.id}">
     <button class="tick" aria-label="${i.done ? 'Put back' : 'Tick off'} ${esc(i.name)}" aria-pressed="${i.done}">${ico('check')}</button>
     <div class="ibody"><b>${esc(i.name)}</b>${bits.length ? `<small>${bits.join('')}</small>` : ''}</div>
-    ${i.price != null ? `<span class="price">${gbp(i.price)}</span>` : ''}
+    ${price}
     <button class="tact" data-edit title="Edit" aria-label="Edit ${esc(i.name)}">${ico('edit')}</button>
   </div>`;
 }
@@ -1468,9 +1640,11 @@ function renderGroups() {
     for (const i of todo) (groups.get(i.cat) || groups.get('other')).items.push(i);
   }
   let html = '';
+  const several = [...groups.values()].filter(g => g.items.length).length > 1;
   for (const g of groups.values()) {
     if (!g.items.length) continue;
-    html += `<div class="card grp"><div class="grp-h"><i style="--c:${g.color}"></i><b>${esc(g.name)}</b><span>${g.items.length}</span></div>${g.items.map(itemRow).join('')}</div>`;
+    const tick = g.items.length > 1 && several ? `<button class="linkbtn" data-tick="${g.items.map(i => i.id).join(',')}">Tick all</button>` : '';
+    html += `<div class="card grp"><div class="grp-h"><i style="--c:${g.color}"></i><b>${esc(g.name)}</b><span>${g.items.length}</span>${tick}</div>${g.items.map(itemRow).join('')}</div>`;
   }
   if (!todo.length) html += `<div class="card empty" style="padding:30px 20px"><h2>Got everything</h2><p>Tap <b>Finish shop</b> to save this shop to your history and clear the ticked items.</p><div class="actions"><button class="btn solid" data-act="finish">${ico('flag')}Finish shop</button></div></div>`;
   if (done.length) {
@@ -1480,6 +1654,13 @@ function renderGroups() {
   $('listGroups').innerHTML = html;
 }
 
+// Puts everything still to get (or just the given items) in the basket
+function tickAll(ids) {
+  const its = cur().items.filter(i => !i.done && (!ids || ids.includes(i.id)));
+  if (!its.length) return;
+  const now = Date.now();
+  withUndo(`${plural(its.length, 'item')} ticked off`, () => its.forEach(i => { i.done = true; i.doneAt = now; }));
+}
 function toggleItem(id, el) {
   const it = cur().items.find(i => i.id === id);
   if (!it) return;
@@ -1500,6 +1681,8 @@ $('v-lists').addEventListener('click', e => {
   if (g) { S.settings.groupBy = g.dataset.group; save(); renderLists(); return; }
   const a = e.target.closest('[data-act]');
   if (a) return listAction(a.dataset.act);
+  const t = e.target.closest('[data-tick]');
+  if (t) return tickAll(t.dataset.tick.split(','));
   const row = e.target.closest('.item');
   if (!row) return;
   if (e.target.closest('[data-edit]')) return editItem(row.dataset.id);
@@ -1513,6 +1696,7 @@ function listAction(act) {
     case 'finish': return finishShop();
     case 'list-menu': return listMenu();
     case 'untick-all': return withUndo('Everything’s back on the list', () => l.items.forEach(i => { i.done = false; i.doneAt = null; }));
+    case 'tick-all': return tickAll();
     case 'from-container': return chooseContainer();
     case 'from-recipe': return chooseRecipe();
     case 'again': return buyAgainSheet();
@@ -1625,18 +1809,19 @@ attachSuggest($('addInput'), $('addSuggest'), {
 function editItem(id) {
   const l = cur(), it = l.items.find(i => i.id === id);
   if (!it) return;
+  const est = estimate(it.name, it.num, it.unit, it.qty);
   openSheet({
     title: 'Edit item',
     body: `<div class="fgrid" style="margin-top:6px">
       <div class="field full"><label for="eName">Item</label><input class="input" id="eName" value="${esc(it.name)}"></div>
       <div class="field"><label for="eQty">Quantity</label><input class="input" id="eQty" value="${esc(it.qty)}" placeholder="e.g. 2, 500g, 1 pack"></div>
-      <div class="field"><label for="ePrice">Price (optional)</label><div class="money"><input class="input" id="ePrice" inputmode="decimal" value="${it.price != null ? it.price.toFixed(2) : ''}" placeholder="0.00"></div></div>
+      <div class="field"><label for="ePrice">Price (optional)</label><div class="money"><input class="input" id="ePrice" inputmode="decimal" value="${it.price != null ? it.price.toFixed(2) : ''}" placeholder="${est ? `about ${est.cost.toFixed(2)}` : '0.00'}"></div></div>
       <div class="field"><label for="eCat">Aisle</label><select class="input" id="eCat">${CATS.map(([k, n]) => `<option value="${k}"${k === it.cat ? ' selected' : ''}>${n}</option>`).join('')}</select></div>
       <div class="field"><label for="eList">List</label><select class="input" id="eList">${S.lists.map(x => `<option value="${x.id}"${x.id === l.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
       <div class="field full"><label for="eNote">Note</label><input class="input" id="eNote" value="${esc(it.note)}" placeholder="e.g. the big bag, ripe ones"></div>
     </div>
     ${it.srcs.length ? `<p class="note">From ${it.srcs.map(s => `<span class="src">${esc(s)}</span>`).join(' ')} <button class="linkbtn" id="eClearSrc">Remove tags</button></p>` : ''}
-    <p class="note">The aisle and price are remembered for next time you add this.</p>`,
+    <p class="note">The aisle and price are remembered for next time you add this.${est && it.price == null ? ' Leave the price empty to use the estimate.' : ''}</p>`,
     foot: `<button class="btn danger" id="eDel">${ico('trash')}Remove</button><div class="actions"><button class="btn" data-close>Cancel</button><button class="btn solid" id="eSave">Save</button></div>`,
     mount: () => {
       if ($('eClearSrc')) $('eClearSrc').onclick = () => { it.srcs = []; $('eClearSrc').parentElement.remove(); };
@@ -1663,20 +1848,31 @@ function editItem(id) {
 
 /* ----- finish shop ----- */
 function finishShop() {
-  const l = cur(), done = l.items.filter(i => i.done), left = l.items.length - done.length;
+  const l = cur(), done = l.items.filter(i => i.done), rest = l.items.filter(i => !i.done);
   if (!done.length) return toast('Tick off what you’ve picked up first');
-  const priced = done.filter(i => i.price != null), total = priced.reduce((a, i) => a + i.price, 0);
+  const cost = itemsCost(done), others = S.lists.filter(x => x.id !== l.id);
+  const opt = (v, title, sub, on, extra = '') => `<label class="chk"><input type="radio" name="fLeft" value="${v}"${on ? ' checked' : ''}><span class="nm">${title}<small>${sub}</small></span>${extra}</label>`;
   openSheet({
     title: 'Finish this shop?',
-    body: `<p style="margin:4px 0 12px">You’ve got <b>${plural(done.length, 'item')}</b>${priced.length ? `, about <b>${gbp(total)}</b>` : ''}. They’ll be saved to your history and cleared from <b>${esc(l.name)}</b>.</p>
-      ${left ? `<div class="banner" style="background:var(--accent-soft);border-color:rgba(255,201,60,.45)"><div class="bico" style="background:var(--accent);color:#5c4400">${ico('list')}</div><div><b>${plural(left, 'item')} still to get</b><p>These stay on the list for next time.</p></div></div>` : ''}`,
+    body: `<p style="margin:4px 0 12px">You’ve got <b>${plural(done.length, 'item')}</b>${cost.priced ? `, about <b>${gbp(cost.total)}</b>` : ''}. They’ll be saved to your history and cleared from <b>${esc(l.name)}</b>.</p>
+      ${rest.length ? `<div class="sec"><span class="eyebrow">${rest.length === 1 ? 'The item' : `The ${rest.length} items`} you didn’t get</span></div>
+        <p class="note" style="margin:0 0 4px">${esc(rest.map(i => i.name).join(', '))}</p>
+        ${opt('clear', 'Take them off the list', 'The shop’s done. You can add them again from History.', true)}
+        ${opt('keep', 'Keep them for next time', `They stay on ${esc(l.name)}`, false)}
+        ${others.length ? opt('move', 'Move them to another list', 'Like a list for a different shop', false, `<select class="input" id="fTo" style="width:auto;max-width:45%;padding:8px 10px;font-size:14px" aria-label="Move to which list">${others.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select>`) : ''}` : ''}`,
     foot: `<div class="actions"><button class="btn" data-close>Not yet</button><button class="btn solid" id="fOk">${ico('flag')}Finish shop</button></div>`,
-    mount: () => {
+    mount: body => {
+      if ($('fTo')) $('fTo').onchange = () => { body.querySelector('input[value="move"]').checked = true; };
       $('fOk').onclick = () => {
+        const how = rest.length ? body.querySelector('input[name="fLeft"]:checked').value : 'keep';
+        const to = how === 'move' && S.lists.find(x => x.id === $('fTo').value);
         closeSheet();
-        withUndo(`Shop saved — ${plural(done.length, 'item')}`, () => {
+        const msg = [`Shop saved — ${plural(done.length, 'item')}`, how === 'clear' && `${rest.length} not bought taken off`, to && `${rest.length} moved to ${to.name}`].filter(Boolean).join(' · ');
+        withUndo(msg, () => {
           const now = Date.now();
-          S.trips.unshift({ id: uid(), at: now, list: l.name, items: done.map(({ name, qty, price, cat }) => ({ name, qty, price, cat })) });
+          S.trips.unshift({ id: uid(), at: now, list: l.name,
+            items: done.map(i => { const c = lineCost(i); return { name: i.name, qty: i.qty, price: i.price, cat: i.cat, ...(c && c.est ? { est: Math.round(c.v * 100) / 100 } : {}) }; }),
+            ...(how !== 'keep' ? { missed: rest.map(({ name, qty, cat }) => ({ name, qty, cat })) } : {}) });
           S.trips = S.trips.slice(0, 300);
           for (const i of done) {
             const key = mkey(i.name);
@@ -1684,7 +1880,13 @@ function finishShop() {
             c.bought = (c.bought || 0) + 1; c.lastBought = now;
             if (i.price != null) c.price = i.price;
           }
-          l.items = l.items.filter(i => !i.done);
+          if (to) for (const i of rest) {
+            const ex = to.items.find(x => !x.done && mkey(x.name) === mkey(i.name));
+            if (!ex) { to.items.push(i); continue; }
+            mergeQty(ex, i);
+            for (const s of i.srcs) if (!ex.srcs.includes(s)) ex.srcs.push(s);
+          }
+          l.items = how === 'keep' ? rest : [];
         });
       };
     },
@@ -1835,13 +2037,13 @@ function openPicker({ title, intro = '', rows, src, emptyMsg = 'Nothing to add',
 
 /* ================= Meal plan ================= */
 let planWeek = mondayOf(todayIso());
-function planSelect(id, selected = '') {
+function planSelect(id, selected = '', optional = true) {
   // the week being viewed plus the one after, and whatever day is already chosen
   const start = selected && mondayOf(selected) < planWeek ? mondayOf(selected) : planWeek < mondayOf(todayIso()) ? planWeek : mondayOf(todayIso());
   const days = Array.from({ length: 14 }, (_, k) => addDays(start, k));
   if (selected && !days.includes(selected)) days.push(selected);
   const today = todayIso();
-  return `<select class="input" id="${id}" aria-label="Plan for which day"><option value="">Don’t add to the plan</option>${days.map(d =>
+  return `<select class="input" id="${id}" aria-label="Plan for which day">${optional ? '<option value="">Don’t add to the plan</option>' : ''}${days.map(d =>
     `<option value="${d}"${d === selected ? ' selected' : ''}>${esc(dayLabel(d, { weekday: 'long', day: 'numeric', month: 'short' }))}${d === today ? ' (today)' : ''}</option>`).join('')}</select>`;
 }
 const mealRecipe = m => m.rid && S.recipes.find(r => r.id === m.rid);
@@ -1852,6 +2054,130 @@ function mealMeta(m) {
   if (!r) return 'Recipe deleted';
   return [r.serves ? `Serves ${fmtNum(m.serves)}` : m.serves !== 1 ? `×${fmtNum(m.serves)}` : '', r.time].filter(Boolean).join(' · ') || plural(r.ingredients.length, 'ingredient');
 }
+// Staples, optional bits and "to taste" don't need buying
+const skipIng = i => isStaple(i.name) || i.optional || /to taste/i.test(i.note || '');
+// What a recipe costs: shop = at the till, in whole packs; used = what actually goes
+// in the pan. With `rows` (from the recipe sheet) it only counts what's ticked.
+function recipeCost(r, serves, rows) {
+  const f = (serves || r.serves || 1) / (r.serves || 1);
+  let shop = 0, used = 0, n = 0;
+  for (const i of rows || r.ingredients) {
+    if (rows ? !i.checked : skipIng(i)) continue;
+    const e = estimate(i.name, i.num != null ? i.num * f : null, i.unit);
+    if (e) { shop += e.cost; used += e.used; n++; }
+  }
+  return n ? { shop, used } : null;
+}
+const perServing = (r, serves, c) => r.serves && serves ? ` · roughly ${gbp(c.used / serves)} a serving` : '';
+
+/* ----- ideas: what to cook next to use up what you're buying ----- */
+const ingKey = name => { const p = productFor(name); return p ? p.id : mkey(name); };
+// What the planned meals between two days need, by product
+function planNeeds(from, to, skip) {
+  const need = new Map();
+  for (const m of S.meals) {
+    if (m === skip || m.cooked || m.date < from || m.date > to) continue;
+    const r = mealRecipe(m);
+    if (!r) continue;
+    const f = (m.serves || r.serves || 1) / (r.serves || 1);
+    for (const i of r.ingredients) {
+      if (skipIng(i)) continue;
+      const p = productFor(i.name), k = p ? p.id : mkey(i.name);
+      if (!need.has(k)) need.set(k, { name: i.name, p, amt: 0 });
+      if (p) need.get(k).amt += needOf(p, i.num != null ? i.num * f : null, i.unit);
+    }
+  }
+  return need;
+}
+const PERISHABLE = new Set(['fruitveg', 'meat', 'dairy', 'chilled', 'bakery']);
+// Fresh things that only come in bigger packs than the meals use
+function leftovers(need) {
+  const out = [];
+  for (const [k, e] of need) {
+    const p = e.p;
+    if (!p || p.loose || p.keeps || !e.amt || !PERISHABLE.has(guessCat(e.name))) continue;
+    const left = packsFor(p, e.amt) * p.size - e.amt;
+    if (left > 0 && left / p.size >= .2) out.push({ k, name: e.name, left, p });
+  }
+  return out;
+}
+function leftAmount(o) {
+  if (o.p.unit === 'each') return String(Math.round(o.left));
+  return (o.left < 100 ? Math.max(5, Math.round(o.left / 5) * 5) : Math.round(o.left / 50) * 50) + o.p.unit;
+}
+const leftChip = o => `${o.name} ${o.p.unit === 'each' ? '×' : '~'}${leftAmount(o)}`;
+const leftWords = o => `${o.p.unit === 'each' ? '' : 'about '}${leftAmount(o)} ${o.name.toLowerCase()}`;
+// Your recipes ranked by how much they'd use up, then by what they share with
+// what you're buying anyway, then by how little extra they cost
+function mealIdeas(weekStart, skip) {
+  const today = todayIso(), end = addDays(weekStart, 6);
+  const need = planNeeds(weekStart < today ? today : weekStart, end, skip);
+  const left = leftovers(need), leftK = new Set(left.map(o => o.k)), buying = new Set(need.keys());
+  // (when changing a meal, what's on the list just for it doesn't count)
+  const skipT = skip && mealTitle(skip), justSkip = i => skipT && i.srcs.length && i.srcs.every(s => s === skipT);
+  for (const i of cur().items) if (!i.done && !isStaple(i.name) && !justSkip(i)) buying.add(ingKey(i.name));
+  const planned = new Set(S.meals.filter(m => m.date >= weekStart && m.date <= end).map(m => m.rid).filter(Boolean));
+  const recs = [];
+  for (const r of S.recipes) {
+    if (planned.has(r.id)) continue;
+    const uses = [], shares = [], extra = [], seen = new Set();
+    for (const i of r.ingredients) {
+      const k = ingKey(i.name);
+      if (skipIng(i) || seen.has(k)) continue;
+      seen.add(k);
+      (leftK.has(k) ? uses : buying.has(k) ? shares : extra).push(i);
+    }
+    if (!uses.length && !shares.length) continue;
+    const c = recipeCost({ ...r, ingredients: extra });
+    recs.push({ r, uses, shares, extra, cost: c ? c.shop : 0, score: uses.length * 3 + shares.length });
+  }
+  recs.sort((a, b) => b.score - a.score || a.cost - b.cost);
+  return { left, recs, byId: new Map(recs.map(x => [x.r.id, x])) };
+}
+const ingNames = a => a.map(i => i.name.toLowerCase()).join(', ');
+function ideaWhy(x) {
+  const bits = [];
+  if (x.uses.length) bits.push(`Uses up <b>${esc(ingNames(x.uses))}</b>`);
+  if (x.shares.length) bits.push(`${x.uses.length ? 'and' : 'Uses'} ${esc(ingNames(x.shares))} you’re buying anyway`);
+  bits.push(x.extra.length ? `${plural(x.extra.length, 'more thing')} to buy${x.cost ? `, about ${gbp(x.cost)}` : ''}` : 'nothing else to buy');
+  return bits.join(' · ');
+}
+function nextFreeDay() {
+  const today = todayIso();
+  let d = planWeek < today ? today : planWeek;
+  for (let k = 0; k < 14 && S.meals.some(m => m.date === d); k++) d = addDays(d, 1);
+  return d;
+}
+function renderIdeas() {
+  const today = todayIso(), end = addDays(planWeek, 6);
+  const any = S.meals.some(m => !m.cooked && m.date >= planWeek && m.date >= today && m.date <= end && mealRecipe(m));
+  const { left, recs } = any ? mealIdeas(planWeek) : { left: [], recs: [] };
+  if (!left.length && !recs.length) { $('planIdeas').innerHTML = ''; return; }
+  $('planIdeas').innerHTML = `<div class="card ideas">
+    <h3>${ico('sparkle')}Ideas for your next meal<span class="sub">Less waste</span></h3>
+    ${left.length ? `<p class="note" style="margin:0 0 8px">This week’s meals will probably leave you with</p><div class="tags">${left.map(o => `<span class="badge open">${esc(leftChip(o))}</span>`).join('')}</div>` : ''}
+    ${recs.slice(0, 3).map(x => `<div class="idea"><div class="cico" style="--c:${hueFor(x.r.title)}">${esc((x.r.title.trim()[0] || '?').toUpperCase())}</div>
+      <span class="lbl">${esc(x.r.title)}<small>${ideaWhy(x)}</small></span><button class="btn sm" data-idea="${x.r.id}">${ico('calendar')}Plan</button></div>`).join('')}
+    ${left.length ? `<div class="actions" style="margin-top:12px">${recs.some(x => x.uses.length) ? '' : '<span class="muted" style="font-size:12.5px;font-weight:650">None of your recipes use these up yet.</span>'}<button class="btn sm" data-act="leftover-prompt">${ico('sparkle')}Ask Claude for a recipe that uses them</button></div>` : ''}
+  </div>`;
+}
+function leftoverPrompt() {
+  const { left } = mealIdeas(planWeek);
+  if (!left.length) return;
+  claudePromptSheet(claudePrompt(`Please write a recipe that uses up what I’ll have left over this week: ${left.map(leftWords).join(', ')}. Keep any other ingredients cheap and few. Make it a Markdown (.md) file I can import into my shopping list app.`),
+    'Copy this and paste it into Claude. It asks for a recipe that uses up your leftovers, as a <b>.md</b> file to import on the Recipes page.');
+}
+
+/* ----- the week ----- */
+function mealRow(m) {
+  const t = mealTitle(m);
+  return `<div class="meal${m.cooked ? ' cooked' : ''}" data-mid="${m.id}">
+    <button class="mopen"><div class="cico" style="--c:${hueFor(t)}">${esc((t.trim()[0] || '?').toUpperCase())}</div>
+      <span class="lbl">${esc(t)}<small>${esc(mealMeta(m))}</small></span>${m.cooked ? `<span class="done-ico" title="Cooked">${ico('check')}</span>` : ''}</button>
+    <button class="tact" data-mswap title="Change meal" aria-label="Change ${esc(t)}">${ico('repeat')}</button>
+    <button class="tact del" data-mdel title="Remove from plan" aria-label="Remove ${esc(t)}">${ico('x')}</button>
+  </div>`;
+}
 function renderPlan() {
   const today = todayIso(), thisWeek = mondayOf(today), end = addDays(planWeek, 6);
   const rel = planWeek === thisWeek ? 'This week' : planWeek === addDays(thisWeek, 7) ? 'Next week' : planWeek === addDays(thisWeek, -7) ? 'Last week' : 'Week of ' + dayLabel(planWeek, { day: 'numeric', month: 'short' });
@@ -1859,12 +2185,12 @@ function renderPlan() {
   $('weekTitle').textContent = rel;
   $('weekSub').textContent = `${dayLabel(planWeek, { day: 'numeric', month: 'short' })} – ${dayLabel(end, { day: 'numeric', month: 'short' })} · ${inWeek.length ? plural(inWeek.length, 'meal') : 'nothing planned'}`;
   $('weekToday').hidden = planWeek === thisWeek;
+  renderIdeas();
   $('planDays').innerHTML = Array.from({ length: 7 }, (_, k) => {
     const d = addDays(planWeek, k), meals = inWeek.filter(m => m.date === d);
     return `<div class="card day${d === today ? ' today' : d < today ? ' past' : ''}" data-date="${d}">
       <div class="day-h"><b>${esc(dayLabel(d, { weekday: 'long' }))}</b><small>${esc(dayLabel(d, { day: 'numeric', month: 'short' }))}</small>${d === today ? '<span class="badge info">Today</span>' : ''}</div>
-      ${meals.map(m => `<button class="meal${m.cooked ? ' cooked' : ''}" data-mid="${m.id}"><div class="cico" style="--c:${hueFor(mealTitle(m))}">${esc((mealTitle(m).trim()[0] || '?').toUpperCase())}</div>
-        <span class="lbl">${esc(mealTitle(m))}<small>${esc(mealMeta(m))}</small></span>${m.cooked ? `<span class="done-ico" title="Cooked">${ico('check')}</span>` : ''}</button>`).join('')}
+      ${meals.map(mealRow).join('')}
       <button class="linkbtn addmeal" data-act="add-meal">+ Add a meal</button>
     </div>`;
   }).join('');
@@ -1876,33 +2202,110 @@ $('v-plan').addEventListener('click', e => {
     if (a.dataset.act === 'week-next') { planWeek = addDays(planWeek, 7); return renderPlan(); }
     if (a.dataset.act === 'week-today') { planWeek = mondayOf(todayIso()); return renderPlan(); }
     if (a.dataset.act === 'add-meal') return chooseMeal(a.closest('[data-date]').dataset.date);
+    if (a.dataset.act === 'leftover-prompt') return leftoverPrompt();
   }
-  const m = e.target.closest('[data-mid]');
-  if (m) openMeal(S.meals.find(x => x.id === m.dataset.mid));
+  const idea = e.target.closest('[data-idea]');
+  if (idea) { const r = S.recipes.find(x => x.id === idea.dataset.idea); return r && openRecipe(r, { shopOnly: true, date: nextFreeDay() }); }
+  const row = e.target.closest('[data-mid]'), m = row && S.meals.find(x => x.id === row.dataset.mid);
+  if (!m) return;
+  if (e.target.closest('[data-mswap]')) return chooseMeal(m.date, m);
+  if (e.target.closest('[data-mdel]')) return removeMeal(m);
+  openMeal(m);
 });
-function chooseMeal(date) {
+// Pick a meal for a day, or (with `replace`) something to have instead of a planned one
+function chooseMeal(date, replace) {
+  const ideas = mealIdeas(mondayOf(date), replace);
+  const recipes = [...ideas.recs.map(x => x.r), ...S.recipes.filter(r => !ideas.byId.has(r.id) && !(replace && r.id === replace.rid))];
+  const off = replace ? unshop(replace, true) : [];
+  const day = dayLabel(date, { weekday: 'long', day: 'numeric', month: 'short' });
+  const why = r => {
+    const x = ideas.byId.get(r.id);
+    if (!x) return recipeMeta(r);
+    return x.uses.length ? `Uses up ${ingNames(x.uses)}` : `Uses ${ingNames(x.shares)} you’re buying anyway`;
+  };
   openSheet({
-    title: `${dayLabel(date, { weekday: 'long', day: 'numeric', month: 'short' })}`,
-    body: `${S.recipes.length ? `<div class="sec"><span class="eyebrow">Pick a recipe</span></div>` + S.recipes.map(r => `<button class="pickrow" data-rid="${r.id}"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><span class="lbl">${esc(r.title)}<small>${esc(recipeMeta(r))}</small></span></button>`).join('')
+    title: replace ? `Change ${mealTitle(replace)}` : day,
+    body: `${replace ? `<p style="margin:4px 0 8px">Pick something else for ${esc(day)}.</p>
+        ${off.length ? `<label class="chk"><input type="checkbox" id="cmOff" checked><span class="nm">Take its ingredients off your list<small>${esc(off.join(', '))}</small></span></label>` : ''}` : ''}
+      ${recipes.length ? `<div class="sec"><span class="eyebrow">Pick a recipe</span></div>` + recipes.map(r => { const x = ideas.byId.get(r.id); return `<button class="pickrow" data-rid="${r.id}"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><span class="lbl">${esc(r.title)}<small>${esc(why(r))}</small></span>${x && x.uses.length ? '<span class="badge done">Less waste</span>' : ''}</button>`; }).join('')
         : `<p style="margin-top:4px">You haven’t imported any recipes yet. Import some on the Recipes page, or just type a meal below.</p>`}
       <div class="sec"><span class="eyebrow">Or just write it down</span></div>
       <form id="fmForm" class="addrow" autocomplete="off"><input class="input" id="fmIn" placeholder="e.g. Leftovers, Takeaway, Out for dinner" aria-label="Meal"><button class="btn" type="submit">${ico('plus')}</button></form>`,
     mount: b => {
-      b.onclick = e => { const r = e.target.closest('[data-rid]'); if (r) openRecipe(S.recipes.find(x => x.id === r.dataset.rid), true, date); };
+      const offOld = () => !!($('cmOff') && $('cmOff').checked);
+      b.onclick = e => { const r = e.target.closest('[data-rid]'); if (r) openRecipe(S.recipes.find(x => x.id === r.dataset.rid), { shopOnly: true, date, replace, unshop: offOld() }); };
       $('fmForm').onsubmit = e => {
         e.preventDefault();
         const t = capFirst($('fmIn').value);
         if (!t) return $('fmIn').focus();
+        const takeOff = offOld();
         closeSheet();
+        if (replace) return withUndo(`${mealTitle(replace)} changed to ${t}`, () => {
+          if (takeOff) unshop(replace);
+          Object.assign(replace, { rid: '', title: t, serves: 1, cooked: false });
+          delete replace.shop;
+        });
         withUndo(`${t} planned for ${dayLabel(date, { weekday: 'long' })}`, () => { S.meals.push({ id: uid(), date, rid: '', title: t, serves: 1, cooked: false }); });
       };
     },
+  });
+}
+// Takes a planned meal's ingredients back off the list, as long as they're still to
+// get and nothing else on the list wants them. Quantities other things added stay.
+// With `dry` it changes nothing and just says which items it would take off or cut down.
+function unshop(m, dry = false) {
+  const title = mealTitle(m), others = S.meals.filter(x => x.id !== m.id && !x.cooked);
+  // another meal of the same recipe is still to cook, so the recipe tag still belongs
+  const tagWanted = k => others.some(x => mealTitle(x) === title && (!Array.isArray(x.shop) || x.shop.some(e => e.k === k)));
+  let entries = m.shop;
+  if (!Array.isArray(entries)) {
+    // planned before meals kept track of what they added: go by the recipe tag
+    entries = [];
+    if (m.rid && !others.some(x => x.rid === m.rid))
+      for (const l of S.lists) for (const i of l.items) if (!i.done && i.srcs.includes(title)) entries.push({ l: l.id, k: mkey(i.name), num: null, unit: '' });
+  }
+  const plan = new Map();
+  for (const e of entries) {
+    const l = S.lists.find(x => x.id === e.l), it = l && l.items.find(i => !i.done && mkey(i.name) === e.k);
+    if (!it) continue;
+    if (!plan.has(it)) plan.set(it, { l, num: it.num, gone: false, cut: false });
+    const st = plan.get(it);
+    if (st.gone) continue;
+    if (e.num != null && st.num != null && unitKey(e.unit) === unitKey(it.unit)) {
+      st.num -= e.num; st.cut = true;
+      if (st.num < 1e-6) st.gone = true;
+    } else if (it.srcs.every(s => s === title) && !tagWanted(e.k)) st.gone = true;
+  }
+  const names = [];
+  for (const [it, st] of plan) {
+    if (st.gone || st.cut) names.push(it.name);
+    if (dry) continue;
+    if (st.gone) { st.l.items = st.l.items.filter(i => i !== it); continue; }
+    if (st.cut) { it.num = st.num; it.qty = buildQty(st.num, it.unit); }
+    if (!tagWanted(mkey(it.name))) it.srcs = it.srcs.filter(s => s !== title);
+  }
+  return names;
+}
+function removeMeal(m) {
+  const off = unshop(m, true), title = mealTitle(m);
+  const go = takeOff => withUndo(`Removed ${title}${takeOff ? ` and ${plural(off.length, 'item')} from your list` : ''}`, () => {
+    if (takeOff) unshop(m);
+    S.meals = S.meals.filter(x => x.id !== m.id);
+  });
+  if (!off.length) { closeSheet(); return go(false); }
+  openSheet({
+    title: `Remove ${title}?`,
+    body: `<p style="margin:4px 0 10px">It comes off ${esc(dayLabel(m.date, { weekday: 'long', day: 'numeric', month: 'short' }))} on the plan.</p>
+      <label class="chk"><input type="checkbox" id="rmOff" checked><span class="nm">Also take its ingredients off your list<small>${esc(off.join(', '))}</small></span></label>`,
+    foot: `<div class="actions"><button class="btn" data-close>Cancel</button><button class="btn solid danger" id="rmOk">${ico('trash')}Remove</button></div>`,
+    mount: () => { $('rmOk').onclick = () => { const takeOff = $('rmOff').checked; closeSheet(); go(takeOff); }; },
   });
 }
 // The cooking view: ingredients scaled to the planned servings, then the method
 function openMeal(m) {
   const r = mealRecipe(m);
   const f = r ? m.serves / (r.serves || 1) : 1;
+  const cost = r && recipeCost(r, m.serves);
   const ings = () => {
     if (!r) return '';
     let out = '', lastG = null;
@@ -1915,18 +2318,19 @@ function openMeal(m) {
   openSheet({
     title: mealTitle(m), wide: true,
     body: `<div class="rmeta" style="margin:0 0 10px"><span class="badge info">${esc(dayLabel(m.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</span>${r ? `<span>${esc(mealMeta(m))}</span>` : ''}${m.cooked ? '<span class="badge done">Cooked</span>' : ''}</div>
+      <label class="plansel">${ico('calendar')}<span class="flabel">Day</span>${planSelect('mDay', m.date, false)}</label>
+      <div class="actions" style="margin:10px 0 4px"><button class="btn sm" id="mSwap">${ico('repeat')}Change meal</button>${r ? `<button class="btn sm" id="mShop">${ico('basket')}Shop for it again</button>` : ''}<button class="btn sm danger" id="mDel">${ico('trash')}Remove from plan</button></div>
       ${r && r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
       ${r && r.ingredients.length ? `<div class="sec"><span class="eyebrow">Ingredients${r.serves ? ` for ${fmtNum(m.serves)}` : ''}</span></div><div class="ings">${ings()}</div>` : ''}
-      ${r ? methodHtml(r) : `<p class="muted">${m.rid ? 'This recipe has been deleted from your recipes.' : 'No recipe for this one — it’s just a note on the plan.'}</p>`}
-      <div class="sec"><span class="eyebrow">Plan</span></div>
-      <div class="actions"><label class="flabel" for="mDay">Move to</label>${planSelect('mDay', m.date).replace('<option value="">Don’t add to the plan</option>', '')}</div>
-      <div class="actions" style="margin-top:14px">${r ? `<button class="btn sm" id="mShop">${ico('basket')}Shop for it again</button>` : ''}<button class="btn sm danger" id="mDel">${ico('trash')}Remove from plan</button></div>`,
+      ${cost ? `<p class="costline">About ${gbp(cost.shop)} to buy${perServing(r, m.serves, cost)}</p>` : ''}
+      ${r ? methodHtml(r) : `<p class="muted">${m.rid ? 'This recipe has been deleted from your recipes.' : 'No recipe for this one — it’s just a note on the plan.'}</p>`}`,
     foot: `<div class="actions"><button class="btn" data-close>Close</button><button class="btn solid" id="mCook">${ico('check')}${m.cooked ? 'Not cooked yet' : 'Mark as cooked'}</button></div>`,
     mount: () => {
       $('mDay').onchange = () => { m.date = $('mDay').value; planWeek = mondayOf(m.date); save(); render(); openMeal(m); toast(`Moved to ${dayLabel(m.date, { weekday: 'long' })}`); };
       $('mCook').onclick = () => { m.cooked = !m.cooked; save(); closeSheet(); render(); };
-      $('mDel').onclick = () => { closeSheet(); withUndo(`Removed ${mealTitle(m)} from the plan`, () => { S.meals = S.meals.filter(x => x.id !== m.id); }); };
-      if ($('mShop')) $('mShop').onclick = () => openRecipe(r, true);
+      $('mSwap').onclick = () => chooseMeal(m.date, m);
+      $('mDel').onclick = () => removeMeal(m);
+      if ($('mShop')) $('mShop').onclick = () => openRecipe(r, { shopOnly: true, meal: m });
     },
   });
 }
@@ -2026,7 +2430,9 @@ function editContainer(c) {
 
 /* ================= Recipes ================= */
 function recipeMeta(r) {
-  return [r.serves ? `Serves ${fmtNum(r.serves)}` : '', r.time, plural(r.ingredients.length, 'ingredient')].filter(Boolean).join(' · ');
+  const c = recipeCost(r);
+  return [r.serves ? `Serves ${fmtNum(r.serves)}` : '', r.time, plural(r.ingredients.length, 'ingredient'),
+    c && (r.serves ? `about ${gbp(c.used / r.serves)} a serving` : `about ${gbp(c.shop)}`)].filter(Boolean).join(' · ');
 }
 function renderRecipes() {
   const q = norm($('recSearch').value);
@@ -2063,7 +2469,7 @@ $('v-recipes').addEventListener('click', e => {
   if (!card) return;
   const r = S.recipes.find(x => x.id === card.dataset.rid);
   const b = e.target.closest('[data-r]');
-  openRecipe(r, b && b.dataset.r === 'shop');
+  openRecipe(r, { shopOnly: !!(b && b.dataset.r === 'shop') });
 });
 $('mdFile').onchange = async e => {
   const files = [...e.target.files];
@@ -2105,13 +2511,13 @@ function pasteRecipe() {
     mount: () => { $('pOk').onclick = () => { const t = $('pText').value; if (!t.trim()) return $('pText').focus(); closeSheet(); importTexts([{ text: t, name: '' }]); }; },
   });
 }
-function claudePromptSheet() {
+function claudePromptSheet(text = CLAUDE_PROMPT, intro = 'Copy this, paste it into Claude and swap <b>[DISH]</b> for what you fancy. Claude will give you a <b>.md</b> file to import here.') {
   openSheet({
     title: 'Ask Claude for a recipe', wide: true,
-    body: `<p style="margin:2px 0 10px">Copy this, paste it into Claude and swap <b>[DISH]</b> for what you fancy. Claude will give you a <b>.md</b> file to import here.</p>
-      <textarea class="input" id="cpText" readonly style="min-height:300px">${esc(CLAUDE_PROMPT)}</textarea>`,
+    body: `<p style="margin:2px 0 10px">${intro}</p>
+      <textarea class="input" id="cpText" readonly style="min-height:300px">${esc(text)}</textarea>`,
     foot: `<div class="actions"><button class="btn" data-close>Close</button><button class="btn solid" id="cpCopy">${ico('copy')}Copy prompt</button></div>`,
-    mount: () => { $('cpCopy').onclick = () => copyText(CLAUDE_PROMPT, 'Prompt copied — paste it into Claude'); },
+    mount: () => { $('cpCopy').onclick = () => copyText(text, 'Prompt copied — paste it into Claude'); },
   });
 }
 function chooseRecipe() {
@@ -2123,14 +2529,18 @@ function chooseRecipe() {
   openSheet({
     title: 'Shop for a recipe',
     body: S.recipes.map(r => `<button class="pickrow" data-rid="${r.id}"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><span class="lbl">${esc(r.title)}<small>${esc(recipeMeta(r))}</small></span></button>`).join(''),
-    mount: b => b.onclick = e => { const r = e.target.closest('[data-rid]'); if (r) openRecipe(S.recipes.find(x => x.id === r.dataset.rid), true); },
+    mount: b => b.onclick = e => { const r = e.target.closest('[data-rid]'); if (r) openRecipe(S.recipes.find(x => x.id === r.dataset.rid), { shopOnly: true }); },
   });
 }
 function scaledQty(i, f) { return f === 1 || i.num == null ? i.qty : buildQty(i.num * f, i.unit); }
-function openRecipe(r, shopOnly = false, planDate = '') {
-  let serves = r.serves || 1;
+// o: { shopOnly, date (plan it for that day), replace (a planned meal it's instead
+// of), unshop (take that meal's ingredients off the list), meal (shopping again
+// for a meal that's already planned) }
+function openRecipe(r, o = {}) {
+  const { shopOnly = false, date: planDate = '', replace = null, meal = null } = o;
   const base = r.serves || 1;
-  const rows = r.ingredients.map(i => ({ ...i, checked: !(isStaple(i.name) || i.optional || /to taste/i.test(i.note)), badge: isStaple(i.name) ? 'staple' : i.optional ? 'optional' : '' }));
+  let serves = meal && meal.serves ? meal.serves : base;
+  const rows = r.ingredients.map(i => ({ ...i, checked: !skipIng(i), badge: isStaple(i.name) ? 'staple' : i.optional ? 'optional' : '' }));
   const onList = new Set(cur().items.filter(i => !i.done).map(i => mkey(i.name)));
   const ingHtml = () => {
     const f = serves / base;
@@ -2144,26 +2554,38 @@ function openRecipe(r, shopOnly = false, planDate = '') {
   const scaler = r.serves
     ? `<span class="flabel">Serves</span><span class="scaler"><button data-sc="-1" aria-label="Fewer">−</button><b id="rsN">${fmtNum(serves)}</b><button data-sc="1" aria-label="More">+</button></span>`
     : `<span class="flabel">Batch</span><span class="scaler"><button data-sc="-1" aria-label="Smaller">−</button><b id="rsN">×${fmtNum(serves)}</b><button data-sc="1" aria-label="Bigger">+</button></span>`;
+  const plan = meal
+    ? `<p class="note" style="margin:0 0 6px">Shopping for ${esc(dayLabel(meal.date, { weekday: 'long', day: 'numeric', month: 'short' }))} on your meal plan.</p>`
+    : `<label class="plansel">${ico('calendar')}<span class="flabel">Meal plan</span>${planSelect('rDay', planDate, !replace)}</label>`;
   openSheet({
     title: r.title, wide: true,
-    body: `<div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, ...r.tags.map(t => `<span class="badge plain">${esc(t)}</span>`)].filter(Boolean).join('')}</div>
+    body: `${replace ? `<div class="banner" style="margin-bottom:12px"><div class="bico">${ico('repeat')}</div><p><b>Instead of ${esc(mealTitle(replace))}</b>${o.unshop ? 'Its ingredients come off your list.' : 'Anything already on your list for it stays there.'}</p></div>` : ''}
+      <div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, ...r.tags.map(t => `<span class="badge plain">${esc(t)}</span>`)].filter(Boolean).join('')}</div>
       ${!shopOnly && r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
-      <label class="plansel">${ico('calendar')}<span class="flabel">Meal plan</span>${planSelect('rDay', planDate)}</label>
+      ${plan}
       <div class="sec"><span class="eyebrow">Ingredients</span></div>
       <div class="toolbar" style="margin-bottom:4px">${scaler}<span class="grow"></span><button class="linkbtn" data-sel="all">Tick all</button><button class="linkbtn" data-sel="none">Untick all</button></div>
       <div id="rIng">${ingHtml()}</div>
+      <p class="costline" id="rCost" hidden></p>
       <p class="note">Unticked items won’t be added. Cupboard staples start unticked — change them in Settings.</p>
       ${shopOnly ? `<p style="margin:14px 0 0"><button class="linkbtn" id="rFull">Show the method and notes</button></p>` : methodHtml(r)}
       ${shopOnly ? '' : `<div class="actions" style="margin-top:18px"><button class="btn sm" id="rEdit">${ico('edit')}Edit</button><button class="btn sm" id="rDl">${ico('download')}Download .md</button><button class="btn sm danger" id="rDel">${ico('trash')}Delete</button></div>`}`,
     foot: `${r.ingredients.length ? listSelect('pkList') : ''}<div class="actions"><button class="btn" data-close>Close</button><button class="btn solid" id="rAdd"></button></div>`,
     mount: body => {
-      const day = () => $('rDay').value;
+      const day = () => $('rDay') ? $('rDay').value : '';
+      const showCost = () => {
+        const c = recipeCost(r, serves, rows);
+        $('rCost').hidden = !c;
+        if (c) $('rCost').textContent = `What’s ticked comes to about ${gbp(c.shop)}${perServing(r, serves, c)}`;
+      };
       const recount = wirePicker(body, rows, $('rAdd'), 'Add', n => {
+        showCost();
         const items = n ? plural(n, 'item') : '';
+        if (replace) return [`${ico('repeat')}${n ? `Swap & add ${items}` : 'Swap meal'}`, false];
         if (day()) return [`${ico('calendar')}${n ? `Plan & add ${items}` : `Plan for ${dayLabel(day(), { weekday: 'short' })}`}`, false];
         return [`${ico('plus')}${n ? `Add ${items}` : 'Nothing ticked'}`, !n];
       });
-      $('rDay').onchange = recount;
+      if ($('rDay')) $('rDay').onchange = recount;
       body.addEventListener('click', e => {
         const s = e.target.closest('[data-sc]');
         if (!s) return;
@@ -2171,8 +2593,9 @@ function openRecipe(r, shopOnly = false, planDate = '') {
         serves = Math.max(step, Math.min(99, serves + step * +s.dataset.sc));
         $('rsN').textContent = r.serves ? fmtNum(serves) : '×' + fmtNum(serves);
         $('rIng').innerHTML = ingHtml();
+        showCost();
       });
-      if ($('rFull')) $('rFull').onclick = () => openRecipe(r);
+      if ($('rFull')) $('rFull').onclick = () => openRecipe(r, { ...o, shopOnly: false });
       if ($('rEdit')) $('rEdit').onclick = () => editRecipeMd(r);
       if ($('rDl')) $('rDl').onclick = () => download(slug(r.title) + '.md', r.md, 'text/markdown');
       if ($('rDel')) $('rDel').onclick = () => { closeSheet(); withUndo(`Deleted ${r.title}`, () => { S.recipes = S.recipes.filter(x => x.id !== r.id); }); };
@@ -2183,16 +2606,25 @@ function openRecipe(r, shopOnly = false, planDate = '') {
         const date = day();
         closeSheet();
         const snap = JSON.stringify(S);
+        if (replace) {
+          if (o.unshop) unshop(replace);
+          S.meals = S.meals.filter(x => x.id !== replace.id);
+        }
         const res = addEntries(l, picked, r.title);
+        // what this meal put on the list, so it can come off again if the meal does
+        const shop = picked.map(x => ({ l: l.id, k: mkey(x.name), num: x.num, unit: x.unit || '' }));
         let msg = picked.length ? addedMsg(res, S.lists.length > 1 ? l.name : '') : '';
         if (date) {
-          S.meals.push({ id: uid(), date, rid: r.id, title: r.title, serves, cooked: false });
+          S.meals.push({ id: uid(), date, rid: r.id, title: r.title, serves, cooked: false, shop });
           planWeek = mondayOf(date);
-          msg = [`Planned for ${dayLabel(date, { weekday: 'long' })}`, msg].filter(Boolean).join(' · ');
+          msg = [replace ? `Swapped for ${r.title}` : `Planned for ${dayLabel(date, { weekday: 'long' })}`, msg].filter(Boolean).join(' · ');
+        } else if (meal) {
+          const m = S.meals.find(x => x.id === meal.id);
+          if (m) m.shop = [...(Array.isArray(m.shop) ? m.shop : []), ...shop];
         }
         const after = JSON.stringify(S);
         save(); render();
-        toast(msg, { undo: () => undoTo(snap, after) });
+        toast(msg || 'Nothing added', { undo: () => undoTo(snap, after) });
       };
     },
   });
@@ -2239,12 +2671,13 @@ function renderHistory() {
   const cat = Object.values(S.catalog), now = Date.now();
   const recent = S.trips.filter(t => now - t.at < 30 * DAY);
   const bought30 = recent.reduce((a, t) => a + t.items.length, 0);
-  const spent30 = recent.reduce((a, t) => a + t.items.reduce((b, i) => b + (i.price || 0), 0), 0);
+  const tripCost = t => t.items.reduce((b, i) => b + (i.price ?? i.est ?? 0), 0);
+  const spent30 = recent.reduce((a, t) => a + tripCost(t), 0);
   const top = cat.filter(c => c.bought).sort((a, b) => b.bought - a.bought)[0];
   $('histTiles').innerHTML = [
     ['Shops finished', S.trips.length, S.trips.length ? `Last: ${fmtDate(S.trips[0].at)}` : 'Finish a shop to log it'],
     ['Items in 30 days', bought30, `${plural(recent.length, 'shop')}`],
-    spent30 ? ['Est. spent, 30 days', gbp(spent30), 'From prices you’ve added'] : ['Items remembered', cat.length, 'Suggested as you type'],
+    spent30 ? ['Est. spent, 30 days', gbp(spent30), 'From your prices and estimates'] : ['Items remembered', cat.length, 'Suggested as you type'],
     ['Most bought', top ? top.name : '—', top ? (top.bought === 1 ? 'Once so far' : `${top.bought} times`) : 'Nothing yet'],
   ].map(([k, v, s]) => `<div class="tile"><div class="eyebrow">${k}</div><b>${esc(v)}</b><small>${esc(s)}</small></div>`).join('');
 
@@ -2264,10 +2697,11 @@ function renderHistory() {
 
   $('tripCount').textContent = S.trips.length ? plural(S.trips.length, 'shop') : '';
   $('tripRows').innerHTML = S.trips.slice(0, 60).map(t => {
-    const total = t.items.reduce((a, i) => a + (i.price || 0), 0);
+    const total = tripCost(t), est = t.items.some(i => i.price == null && i.est != null), missed = t.missed || [];
     return `<details class="trip" data-tid="${t.id}"><summary><div class="lbl">${esc(fmtDate(t.at))} · ${esc(t.list)}<small>${new Date(t.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></div>
-      <span class="badge plain">${plural(t.items.length, 'item')}</span>${total ? `<span class="val num">${gbp(total)}</span>` : ''}</summary>
+      <span class="badge plain">${plural(t.items.length, 'item')}</span>${total ? `<span class="val num">${est ? '≈' : ''}${gbp(total)}</span>` : ''}</summary>
       <div class="tripitems">${t.items.map(i => `<span class="badge plain">${esc(i.name)}${i.qty ? ' · ' + esc(i.qty) : ''}</span>`).join('')}</div>
+      ${missed.length ? `<p class="note" style="margin:0 0 10px">Didn’t get: ${esc(missed.map(i => i.name).join(', '))}</p>` : ''}
       <div class="actions"><button class="btn sm" data-t="again">${ico('repeat')}Add these again</button><button class="btn sm danger" data-t="del">${ico('trash')}Delete</button></div></details>`;
   }).join('') || '<p class="muted" style="margin:8px 0">When you’ve finished shopping, tap <b>Finish shop</b> on your list and the shop is saved here.</p>';
 }
@@ -2290,14 +2724,22 @@ $('v-history').addEventListener('click', e => {
   if (!t) return;
   const trip = S.trips.find(x => x.id === t.closest('[data-tid]').dataset.tid);
   if (t.dataset.t === 'del') return withUndo('Shop deleted', () => { S.trips = S.trips.filter(x => x !== trip); });
-  openPicker({ title: 'Add these again', rows: trip.items.map(i => ({ name: i.name, ...parseQtyOnly(i.qty), cat: i.cat, checked: true })) });
+  openPicker({ title: 'Add these again', grouped: !!(trip.missed || []).length, rows: [
+    ...trip.items.map(i => ({ name: i.name, ...parseQtyOnly(i.qty), cat: i.cat, checked: true, group: '' })),
+    ...(trip.missed || []).map(i => ({ name: i.name, ...parseQtyOnly(i.qty), cat: i.cat, checked: true, group: 'Didn’t get last time' })),
+  ] });
 });
 
 /* ================= Settings ================= */
+const PRICE_NOTES = { budget: 'Prices like Aldi and Lidl.', std: 'Prices like Tesco, Sainsbury’s and Asda.', premium: 'Prices like Waitrose and M&S.', off: 'No estimates — only prices you type in yourself.' };
 function renderSettings() {
   applyTheme();
   if (document.activeElement !== $('staples')) $('staples').value = S.settings.staples.join('\n');
+  const lv = PRICE_NOTES[S.settings.prices] ? S.settings.prices : 'std';
+  document.querySelectorAll('#priceSeg button').forEach(b => b.classList.toggle('on', b.dataset.price === lv));
+  $('priceNote').textContent = PRICE_NOTES[lv];
 }
+$('priceSeg').onclick = e => { const b = e.target.closest('[data-price]'); if (b) { S.settings.prices = b.dataset.price; save(); renderSettings(); } };
 $('staples').addEventListener('input', () => {
   S.settings.staples = $('staples').value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
   save();
