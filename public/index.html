@@ -344,6 +344,12 @@ select.input{appearance:auto}
 .chipbar .lchip,.chipbar .lchip.on{padding:8px 13px;box-shadow:none}
 .chipbar .sep{flex:none;width:1px;background:var(--border-strong);margin:6px 2px}
 .badge.kind{background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c)}
+button.badge{border:none;cursor:pointer;line-height:1.5}
+button.badge:hover{box-shadow:inset 0 0 0 1px currentColor}
+.badge.on,.badge.kind.on{background:var(--brand);color:#fff}
+.recinfo{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;font-size:13px;font-weight:650;color:var(--text-2)}
+.seg.sm{padding:3px}
+.seg.sm button{padding:5px 11px;font-size:12px}
 
 /* ============ Meal plan ============ */
 .weekbar{gap:12px;flex-wrap:nowrap}
@@ -673,6 +679,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
             <div class="search" id="recSearchWrap"><svg><use href="#i-search"/></svg><input class="input" id="recSearch" placeholder="Search recipes" aria-label="Search recipes"></div>
           </div>
           <div class="chipbar" id="recFilters" role="group" aria-label="Filter recipes" hidden></div>
+          <div class="recinfo" id="recInfo" hidden></div>
           <div class="cards" id="recGrid"></div>
         </div>
       </section>
@@ -810,17 +817,17 @@ const RULES = [
   ['personal', 'shampoo|conditioner|soap|toothpaste|toothbrush|deodorant|razors?|paracetamol|ibuprofen|plasters|shower gel|moisturi[sz]er|sun ?cream|vitamins|hand ?wash|cotton|mouthwash|floss|nappies|wipes|sanitary|tampons'],
   ['pets', 'parrot|budgie|bird ?seed|cat (food|litter|treats)|dog (food|treats|biscuits)|kitten|puppy|pets?\\b|litter|millet|cuttlefish|pellets|seed mix'],
   ['frozen', 'frozen|ice ?cream|ice lolly|ice cubes|fish fingers|oven chips|chips\\b|peas\\b|petits pois|hash browns'],
-  ['cupboard', 'fish sauce|oyster sauce|sweet chilli|gochujang|bay lea(f|ves)|vinegar|ketchup|breadcrumbs|panko|bread flour|strong (white )?flour|egg noodles|coconut (milk|cream)|peanut butter|tinned|tin of|can of|canned|black pepper|peppercorns|chilli (flakes|powder)|curry (paste|powder)|tomato (pur[eé]e|paste)|chopped tomatoes|plum tomatoes|passata|stock|dried|ground |baked beans|kidney beans|black beans|butter beans|cannellini|chickpeas|lentils|sweetcorn|garlic (powder|granules)|ginger (paste|powder)|lemon juice|lime juice'],
+  ['cupboard', 'fish sauce|oyster sauce|sweet chilli|gochujang|fennel seeds|chutney|mint sauce|cranberry sauce|taco shells?|laksa|seasoning|bay lea(f|ves)|vinegar|ketchup|breadcrumbs|panko|bread flour|strong (white )?flour|egg noodles|coconut (milk|cream)|peanut butter|tinned|tin of|can of|canned|black pepper|peppercorns|chilli (flakes|powder)|curry (paste|powder)|tomato (pur[eé]e|paste)|chopped tomatoes|plum tomatoes|passata|stock|dried|ground |baked beans|kidney beans|black beans|butter beans|cannellini|chickpeas|lentils|sweetcorn|garlic (powder|granules)|ginger (paste|powder)|lemon juice|lime juice'],
   ['bakery', 'garlic bread'],
   ['fruitveg', 'butternut|acorn squash'],
   ['snacks', 'crisps|chocolate|biscuits?|sweets|popcorn|cookies?|haribo|cereal bars?|flapjacks?|doughnuts?|donuts?'],
-  ['drinks', 'juice|cola|coke|lemonade|beer|lager|wine|cider|gin\\b|vodka|whisk(e)?y|rum\\b|fizzy|smoothie|sparkling water|still water|bottled water|mineral water|squash\\b|tonic|coffee|tea\\b|teabags|tea bags|energy drink|brandy|cognac|sherry|prosecco'],
-  ['meat', 'chicken|beef|pork|lamb|mince|sausages?|bacon|ham\\b|turkey|steaks?|salmon|cod\\b|tuna|prawns?|fish|haddock|mackerel|chorizo|duck|gammon|burgers?|meatballs|salami|pepperoni|sea ?bass|trout|venison|kebab|pancetta|prosciutto'],
-  ['dairy', 'milk|butter|cheese|cheddar|mozzarella|parmesan|feta|halloumi|brie|yog(h)?urt|cream|eggs?\\b|cr[eè]me fra[iî]che|custard|ghee|quark|skyr|kefir|ricotta|mascarpone'],
+  ['drinks', 'juice|cola|coke|lemonade|beer|lager|ale\\b|wine|cider|gin\\b|vodka|whisk(e)?y|rum\\b|fizzy|smoothie|sparkling water|still water|bottled water|mineral water|squash\\b|tonic|coffee|tea\\b|teabags|tea bags|energy drink|brandy|cognac|sherry|prosecco'],
+  ['meat', 'black pudding|chicken|beef|pork|lamb|mince|sausages?|bacon|ham\\b|turkey|steaks?|salmon|cod\\b|tuna|prawns?|fish|haddock|mackerel|chorizo|duck|gammon|burgers?|meatballs|salami|pepperoni|sea ?bass|trout|venison|kebab|pancetta|prosciutto'],
+  ['dairy', 'milk|butter|cheese|cheddar|mozzarella|parmesan|feta|halloumi|brie|yog(h)?urt|cream|eggs?\\b|cr[eè]me fra[iî]che|custard|ghee|quark|skyr|kefir|ricotta|mascarpone|paneer'],
   ['bakery', 'bread|loaf|rolls?\\b|bagels?|croissants?|wraps?\\b|tortillas?|pittas?|flatbreads?|naan|muffins?|crumpets?|baguette|brioche|cakes?\\b|buns?\\b|sourdough|scones?|pancakes|pastries'],
   ['fruitveg', 'apples?|bananas?|oranges?|pears?\\b|grapes|berr|strawberr|blueberr|raspberr|blackberr|lemons?\\b|limes?\\b|mangos?|mangoes|melon|pineapple|kiwi|plums?|peach|nectarine|cherr|pomegranate|papaya|figs?\\b|apricots?|clementines?|satsumas?|tangerines?|grapefruit|coconut|potato|onions?|garlic|carrots?|broccoli|cauliflower|cabbage|lettuce|spinach|kale|peppers?\\b|tomato|cucumber|courgette|zucchini|aubergine|mushroom|celery|leeks?|parsley|coriander|cilantro|basil|mint\\b|thyme|rosemary|sage\\b|dill|chives|ginger|chill?i(es|s)?\\b|squash|pumpkin|beetroot|radish|corn on the cob|avocados?|salad|rocket|spring onions?|shallots?|asparagus|green beans|runner beans|sprouts|parsnips?|turnips?|swede|fennel|beansprouts|pak choi|bok choy|herbs|lemongrass|okra|cress|chard|sugar ?snap|mangetout|edamame|artichoke|yams?|plantain|veg\\b|vegetables|fruit'],
   ['chilled', 'hummus|houmous|tofu|pesto|fresh pasta|gnocchi|dips?\\b|coleslaw|quiche|pastry|tzatziki|guacamole|salsa|ready meals?|pizza'],
-  ['cupboard', 'pasta|spaghetti|penne|fusilli|linguine|tagliatelle|rigatoni|farfalle|orzo|lasagne|cannelloni|macaroni|saffron|ras el hanout|suet|rice|noodles?|flour|sugar|oils?\\b|vinegar|salt|spices?|gravy|sauce|soy|ketchup|mayo(nnaise)?|mustard|honey|jam\\b|marmalade|cereal|oats|porridge|beans|cumin|paprika|turmeric|cinnamon|curry|oregano|nutmeg|garam masala|baking|yeast|cocoa|nuts\\b|almonds|cashews|peanuts|walnuts|seeds|breadcrumbs|couscous|quinoa|crackers|stock cubes?|syrup|vanilla|olives|capers|raisins|sultanas|cornflour|bicarbonate|gelatine|worcestershire|sriracha|tahini|miso|bulgur|polenta|cereal'],
+  ['cupboard', 'pasta|spaghetti|penne|fusilli|linguine|tagliatelle|pappardelle|rigatoni|farfalle|orzo|lasagne|cannelloni|macaroni|saffron|ras el hanout|suet|rice|noodles?|flour|sugar|oils?\\b|vinegar|salt|spices?|gravy|sauce|soy|ketchup|mayo(nnaise)?|mustard|honey|jam\\b|marmalade|cereal|oats|porridge|beans|cumin|paprika|turmeric|cinnamon|curry|oregano|nutmeg|garam masala|baking|yeast|cocoa|nuts\\b|almonds|cashews|peanuts|walnuts|seeds|breadcrumbs|couscous|quinoa|crackers|stock cubes?|syrup|vanilla|olives|capers|raisins|sultanas|cornflour|bicarbonate|gelatine|worcestershire|sriracha|tahini|miso|bulgur|polenta|cereal'],
 ].map(([cat, pat]) => [cat, new RegExp('(?:^|[^a-z])(?:' + pat + ')', 'i')]);
 function guessCat(name) {
   const known = S.catalog[mkey(name)];
@@ -904,7 +911,7 @@ const PRICES = [
   ['chicken stock', 1.00, 10, 'each', { ea: 500 }], ['beef stock', 1.00, 10, 'each', { ea: 500 }], ['stock', 1.00, 10, 'each', { ea: 500 }], ['coconut milk', 0.95, 400, 'ml'], ['coconut cream', 0.85, 160, 'ml'], ['peanut butter', 2.00, 340, 'g'],
   ['butter beans|chickpeas|kidney beans|black beans|cannellini|haricot|borlotti|baked beans|mixed beans', 0.65, 400, 'g'],
   ['chopped tomatoes|plum tomatoes|tinned tomatoes|canned tomatoes', 0.50, 400, 'g'], ['tomato (pur[eé]e|paste)', 0.60, 200, 'g'],
-  ['passata', 0.75, 500, 'g'], ['sun.?dried tomato', 2.00, 280, 'g'], ['dried apricots?', 1.60, 250, 'g'], ['sweetcorn', 0.65, 325, 'g'],
+  ['passata', 0.75, 500, 'g'], ['sun.?dried tomato', 2.00, 280, 'g'], ['mango chutney|chutney', 1.50, 340, 'g'], ['mint sauce', 1.00, 165, 'g'], ['cranberry sauce', 1.20, 200, 'g'], ['dried apricots?', 1.60, 250, 'g'], ['sweetcorn', 0.65, 325, 'g'],
   ['tuna steaks?', 4.50, 2, 'each', { ea: 125 }], ['tuna', 1.10, 145, 'g'], ['egg noodles|rice noodles|udon|noodles', 1.10, 300, 'g'],
   ['fresh pasta|tortellini|ravioli|gnocchi', 2.00, 300, 'g'], ['mangetout|sugar.?snap', 1.10, 150, 'g'],
   ['lemon juice|lime juice', 0.70, 250, 'ml', { keeps: 1 }], ['orange juice|apple juice|juice', 1.60, 1000, 'ml'],
@@ -914,7 +921,7 @@ const PRICES = [
   ['balsamic', 1.50, 250, 'ml'], ['vinegar', 1.20, 350, 'ml'], ['soy sauce|soya sauce', 1.30, 250, 'ml'], ['fish sauce', 1.50, 200, 'ml'],
   ['oyster sauce|hoisin|teriyaki', 1.40, 250, 'ml'], ['sweet chilli sauce|sriracha|hot sauce|tabasco|peri.?peri', 1.50, 250, 'ml'], ['gochujang', 3.00, 170, 'g'],
   ['barbecue sauce|bbq sauce|brown sauce', 1.50, 450, 'g'], ['tartare sauce|tartar sauce', 1.30, 300, 'g'], ['worcestershire', 1.20, 150, 'ml'],
-  ['ketchup', 1.75, 460, 'g'], ['mayo', 1.75, 400, 'g'], ['dijon|mustard', 1.00, 185, 'g'], ['curry paste|thai (red|green) paste', 1.60, 190, 'g'],
+  ['ketchup', 1.75, 460, 'g'], ['mayo', 1.75, 400, 'g'], ['dijon|mustard', 1.00, 185, 'g'], ['curry paste|thai (red|green) paste|laksa', 1.60, 190, 'g'],
   ['curry sauce|tikka masala sauce|korma sauce|pasta sauce|bolognese sauce|stir.?fry sauce', 1.40, 450, 'g'],
   ['gravy', 1.30, 170, 'g'], ['pesto', 1.70, 190, 'g'], ['salsa', 1.25, 300, 'g'],
   // cupboard
@@ -922,7 +929,7 @@ const PRICES = [
   ['breadcrumbs|panko', 1.20, 200, 'g'], ['flour(?! tortilla)', 0.90, 1500, 'g'], ['sugar', 1.20, 1000, 'g'], ['honey', 1.60, 340, 'g'],
   ['maple syrup', 3.00, 250, 'ml'], ['syrup', 1.60, 454, 'g'], ['olive oil', 4.50, 500, 'ml'], ['sesame oil', 2.20, 250, 'ml'],
   ['coconut oil', 3.00, 300, 'ml'], ['oil', 2.00, 1000, 'ml'], ['microwave rice|rice pouch', 1.10, 250, 'g'], ['risotto rice|arborio', 1.60, 500, 'g'], ['paella rice', 2.00, 500, 'g'], ['suet', 2.00, 200, 'g'],
-  ['rice', 1.80, 1000, 'g'], ['lasagne|cannelloni', 1.00, 250, 'g'], ['spaghetti|penne|fusilli|linguine|tagliatelle|rigatoni|macaroni|farfalle|orzo|pasta', 0.80, 500, 'g'],
+  ['rice', 1.80, 1000, 'g'], ['lasagne|cannelloni', 1.00, 250, 'g'], ['spaghetti|penne|fusilli|linguine|tagliatelle|pappardelle|rigatoni|macaroni|farfalle|orzo|pasta', 0.80, 500, 'g'],
   ['couscous', 1.00, 500, 'g'], ['quinoa', 2.50, 300, 'g'], ['lentils', 1.30, 500, 'g'], ['porridge|oats', 1.00, 1000, 'g'],
   ['cereal|cornflakes|granola|muesli|weetabix', 2.00, 500, 'g'], ['pine nuts', 2.50, 100, 'g'],
   ['cashews|almonds|walnuts|peanuts|pecans|hazelnuts|pistachios|nuts\\b', 2.00, 200, 'g'], ['sesame seeds|chia|seeds', 1.20, 100, 'g'],
@@ -941,9 +948,9 @@ const PRICES = [
   ['oat milk|almond milk|soya milk|soy milk|oat drink', 1.50, 1000, 'ml'], ['milk', 1.15, 1136, 'ml', { keeps: 1 }], ['custard', 1.00, 500, 'g'],
   // frozen
   ['frozen chips|oven chips|chips\\b', 2.00, 1500, 'g'], ['hash browns', 1.50, 750, 'g'], ['fish fingers', 2.00, 10, 'each'],
-  ['frozen peas|petits pois|peas\\b', 1.30, 900, 'g'], ['frozen (mixed )?veg|frozen berries|frozen fruit|frozen spinach', 1.75, 750, 'g'], ['pizza', 2.00, 1, 'each'],
+  ['frozen peas|petits pois|peas\\b', 1.30, 900, 'g'], ['edamame', 2.00, 400, 'g'], ['frozen (mixed )?veg|frozen berries|frozen fruit|frozen spinach', 1.75, 750, 'g'], ['pizza', 2.00, 1, 'each'],
   // bakery
-  ['garlic bread', 1.00, 1, 'each'], ['tortillas?|wraps?\\b', 1.10, 8, 'each'], ['pittas?', 0.65, 6, 'each'], ['flatbreads?', 1.30, 4, 'each'], ['naan', 1.10, 2, 'each'],
+  ['garlic bread', 1.00, 1, 'each'], ['tortillas?|wraps?\\b', 1.10, 8, 'each'], ['pittas?', 0.65, 6, 'each'], ['taco shells?', 1.40, 12, 'each'], ['flatbreads?', 1.30, 4, 'each'], ['naan', 1.10, 2, 'each'],
   ['bagels?', 1.20, 5, 'each'], ['crumpets?', 0.75, 6, 'each'], ['croissants?', 1.30, 4, 'each'], ['muffins?', 1.00, 4, 'each'],
   ['buns?\\b|rolls?\\b|baps?\\b', 1.00, 6, 'each'], ['baguette', 0.75, 1, 'each'], ['sourdough', 2.00, 1, 'each', { sub: 14 }],
   ['bread|loaf', 1.30, 1, 'each', { sub: 20 }],
@@ -956,11 +963,11 @@ const PRICES = [
   ['whole chicken', 5.00, 1, 'each'], ['chicken', 6.50, 1000, 'g', { ea: 160, loose: 1 }],
   ['sirloin', 25, 1000, 'g', { ea: 225, loose: 1 }], ['rib.?eye', 30, 1000, 'g', { ea: 250, loose: 1 }], ['fillet steak|beef fillet', 45, 1000, 'g', { ea: 200, loose: 1 }],
   ['rump', 16, 1000, 'g', { ea: 225, loose: 1 }], ['flank|bavette|skirt|hanger', 16, 1000, 'g', { ea: 300, loose: 1 }],
-  ['stewing steak|braising steak|diced beef|brisket|beef shin', 11, 1000, 'g', { loose: 1 }], ['steaks?\\b', 20, 1000, 'g', { ea: 225, loose: 1 }],
-  ['beef', 12, 1000, 'g', { loose: 1 }], ['sausages?', 2.50, 8, 'each', { ea: 57 }], ['chorizo', 2.25, 225, 'g'], ['pancetta|lardons', 2.00, 130, 'g'],
-  ['bacon', 2.30, 10, 'each', { ea: 30 }], ['prosciutto|parma ham|serrano|salami|pepperoni', 2.00, 90, 'g'], ['gammon', 7, 1000, 'g', { loose: 1 }],
+  ['stewing steak|braising steak|diced beef|brisket|beef shin', 11, 1000, 'g', { loose: 1 }],
+  ['beef', 12, 1000, 'g', { ea: 225, loose: 1 }], ['sausages?', 2.50, 8, 'each', { ea: 57 }], ['chorizo', 2.25, 225, 'g'], ['pancetta|lardons', 2.00, 130, 'g'],
+  ['bacon', 2.30, 10, 'each', { ea: 30 }], ['prosciutto|parma ham|serrano|salami|pepperoni', 2.00, 90, 'g'], ['gammon', 7, 1000, 'g', { ea: 150, loose: 1 }], ['black pudding', 1.50, 250, 'g', { ea: 30 }],
   ['ham\\b', 1.60, 125, 'g', { ea: 25 }], ['pork belly', 8, 1000, 'g', { loose: 1 }], ['pork', 7, 1000, 'g', { ea: 180, loose: 1 }],
-  ['lamb', 13, 1000, 'g', { ea: 100, loose: 1 }], ['turkey', 9, 1000, 'g', { loose: 1 }], ['duck', 14, 1000, 'g', { ea: 180, loose: 1 }],
+  ['lamb', 13, 1000, 'g', { ea: 100, loose: 1 }], ['turkey', 9, 1000, 'g', { loose: 1 }], ['duck', 14, 1000, 'g', { ea: 180, loose: 1 }], ['steaks?\\b', 20, 1000, 'g', { ea: 225, loose: 1 }],
   ['burgers?', 2.50, 4, 'each'], ['meatballs?', 2.50, 12, 'each'],
   // fruit and veg
   ['sweet potato', 1.20, 1000, 'g', { ea: 250, loose: 1, keeps: 1 }], ['new potato|baby potato|salad potato', 1.10, 1000, 'g', { ea: 40, keeps: 1 }],
@@ -983,7 +990,7 @@ const PRICES = [
   ['grapes', 1.75, 500, 'g'], ['strawberr', 2.00, 400, 'g'], ['blueberr|raspberr|blackberr', 1.75, 150, 'g'], ['mangos?|mangoes', 1.00, 1, 'each'],
   ['pineapple', 1.25, 1, 'each'], ['melon', 1.50, 1, 'each'], ['kiwi', 0.25, 1, 'each'],
   // drinks
-  ['brandy|cognac', 15, 700, 'ml'], ['wine|prosecco', 6.50, 750, 'ml'], ['beer|lager|ale\\b', 5.00, 4, 'each'], ['cider', 4.50, 4, 'each'],
+  ['brandy|cognac', 15, 700, 'ml'], ['wine|prosecco', 6.50, 750, 'ml'], ['beer|lager|ale\\b', 5.00, 4, 'each', { ea: 440 }], ['cider', 4.50, 4, 'each', { ea: 440 }],
   ['gin\\b|vodka|whisk(e)?y|rum\\b', 17, 700, 'ml'], ['cola|coke|lemonade|fizzy', 1.80, 2000, 'ml'], ['squash\\b', 1.50, 1000, 'ml'],
   ['tonic', 1.20, 1000, 'ml'], ['sparkling water|still water|bottled water|mineral water', 0.60, 2000, 'ml'], ['tea ?bags|tea\\b', 2.50, 80, 'each'],
   ['coffee', 4.00, 200, 'g'],
@@ -2427,7 +2434,7 @@ const MEAT_FREE = /(?:^|[^a-z])(?:veggie|vegetarian|vegan|quorn|meat.?free|plant
 // Only there for flavour, so "chicken stock" doesn't make a beef stew a chicken dish
 const FLAVOUR = /(?:^|[^a-z])(?:stock|broth|bouillon|gravy|sauce|paste|fat|dripping|seasoning)/;
 // Not vegetarian, even though they're not a main ingredient
-const NOT_VEG = /(?:^|[^a-z])(?:turkey|duck|goose|venison|rabbit|pheasant|gelatine?|lard\b|suet|worcestershire|anchov|liver)/;
+const NOT_VEG = /(?:^|[^a-z])(?:turkey|duck|goose|venison|rabbit|pheasant|gelatine?|lard\b|suet|worcestershire|anchov|liver|black pudding)/;
 function recipeKinds(r) {
   const tags = r.tags.map(norm), out = new Set();
   let meaty = false;
@@ -2443,17 +2450,30 @@ function recipeKinds(r) {
 }
 const kindBadge = id => `<span class="badge kind" style="--c:${KIND[id].color}">${esc(KIND[id].name)}</span>`;
 const shownTags = r => r.tags.filter(t => !TAG_KIND[norm(t)]);
+// The same badges as buttons that switch that filter on and off
+const kindFilterBadge = id => { const on = recFilter.has('k:' + id); return `<button class="badge kind${on ? ' on' : ''}" style="--c:${KIND[id].color}" data-rf="k:${id}" aria-pressed="${on}" title="${on ? 'Stop filtering by' : 'Show only'} ${esc(KIND[id].name)}">${esc(KIND[id].name)}</button>`; };
+const tagFilterBadge = t => { const k = 't:' + norm(t), on = recFilter.has(k); return `<button class="badge plain${on ? ' on' : ''}" data-rf="${esc(k)}" aria-pressed="${on}" title="${on ? 'Stop filtering by' : 'Show only'} ${esc(t)}">${esc(t)}</button>`; };
 
 // Which filters are on: "k:chicken" for a group, "t:dinner" for a tag. Kept on this phone.
-let recFilter = new Set();
-try { recFilter = new Set(JSON.parse(localStorage.getItem('shop_recfilter')) || []); } catch {}
-function saveRecFilter() { try { localStorage.setItem('shop_recfilter', JSON.stringify([...recFilter])); } catch {} }
-// Groups are "any of" (chicken or vegetarian), tags are "any of" (dinner or lunch),
-// and a recipe has to match both when both are picked
+let recFilter = new Set(), recMatch = 'all';
+try { recFilter = new Set(JSON.parse(localStorage.getItem('shop_recfilter')) || []); recMatch = localStorage.getItem('shop_recmatch') === 'any' ? 'any' : 'all'; } catch {}
+function saveRecFilter() { try { localStorage.setItem('shop_recfilter', JSON.stringify([...recFilter])); localStorage.setItem('shop_recmatch', recMatch); } catch {} }
+// Groups are "any of" (chicken or vegetarian, for variety). Tags are "all of"
+// (quick and comfort food), or "any of" if you switch it. A recipe has to match
+// both when both are picked.
 function passesFilter(r) {
   const ks = [...recFilter].filter(f => f[0] === 'k').map(f => f.slice(2)), ts = [...recFilter].filter(f => f[0] === 't').map(f => f.slice(2));
-  const tags = r.tags.map(norm);
-  return (!ks.length || ks.some(k => recipeKinds(r).includes(k))) && (!ts.length || ts.some(t => tags.includes(t)));
+  const tags = r.tags.map(norm), hasTag = t => tags.includes(t);
+  return (!ks.length || ks.some(k => recipeKinds(r).includes(k))) && (!ts.length || (recMatch === 'any' ? ts.some(hasTag) : ts.every(hasTag)));
+}
+// "12 of 114 recipes · match all / any of the tags · Clear"
+function renderRecInfo(shown, q) {
+  const el = $('recInfo'), tags = [...recFilter].filter(f => f[0] === 't').length;
+  el.hidden = !recFilter.size && !q;
+  if (el.hidden) return;
+  el.innerHTML = `<span><b>${shown}</b> of ${plural(S.recipes.length, 'recipe')}</span>
+    ${tags > 1 ? `<span class="seg sm" role="group" aria-label="How to match tags"><button data-match="all" class="${recMatch === 'all' ? 'on' : ''}">All these tags</button><button data-match="any" class="${recMatch === 'any' ? 'on' : ''}">Any of them</button></span>` : ''}
+    ${recFilter.size ? '<button class="linkbtn" data-rf="">Clear filters</button>' : ''}`;
 }
 function renderRecFilters() {
   const kc = new Map(), tc = new Map();
@@ -2488,11 +2508,12 @@ function renderRecipes() {
   }
   const words = q.split(' ').filter(Boolean);
   const list = S.recipes.filter(r => passesFilter(r) && (!words.length || words.every(w => norm([r.title, r.tags.join(' '), recipeKinds(r).map(k => KIND[k].name).join(' '), r.ingredients.map(i => i.name).join(' ')].join(' ')).includes(w))));
+  renderRecInfo(list.length, q);
   g.innerHTML = list.map(r => {
     const ks = recipeKinds(r), tags = shownTags(r);
     return `<div class="card cont" data-rid="${r.id}">
       <div class="cont-h"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><div><b>${esc(r.title)}</b><small>${esc(recipeMeta(r))}</small></div></div>
-      ${ks.length || tags.length ? `<div class="tags">${ks.map(kindBadge).join('')}${tags.map(t => `<span class="badge plain">${esc(t)}</span>`).join('')}</div>` : ''}
+      ${ks.length || tags.length ? `<div class="tags">${ks.map(kindFilterBadge).join('')}${tags.map(tagFilterBadge).join('')}</div>` : ''}
       <p class="prev">${esc(r.ingredients.map(i => i.name).join(', ')) || '<span class="muted">No ingredients found</span>'}</p>
       <div class="actions"><button class="btn solid" data-r="shop"${r.ingredients.length ? '' : ' disabled'}>${ico('basket')}Shop for it</button><button class="btn" data-r="open">Open</button></div>
     </div>`;
@@ -2506,6 +2527,8 @@ $('v-recipes').addEventListener('click', e => {
     if (a.dataset.act === 'paste-recipe') return pasteRecipe();
     if (a.dataset.act === 'library') return recipeLibrary();
   }
+  const m = e.target.closest('[data-match]');
+  if (m) { recMatch = m.dataset.match; saveRecFilter(); return renderRecipes(); }
   const f = e.target.closest('[data-rf]');
   if (f) {
     const k = f.dataset.rf;
@@ -2646,7 +2669,7 @@ function openRecipe(r, o = {}) {
   openSheet({
     title: r.title, wide: true,
     body: `${replace ? `<div class="banner" style="margin-bottom:12px"><div class="bico">${ico('repeat')}</div><p><b>Instead of ${esc(mealTitle(replace))}</b>${o.unshop ? 'Its ingredients come off your list.' : 'Anything already on your list for it stays there.'}</p></div>` : ''}
-      <div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, ...r.tags.map(t => `<span class="badge plain">${esc(t)}</span>`)].filter(Boolean).join('')}</div>
+      <div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, ...recipeKinds(r).map(k => `<button class="badge kind" style="--c:${KIND[k].color}" data-rtag="k:${k}" title="Show ${esc(KIND[k].name.toLowerCase())} recipes">${esc(KIND[k].name)}</button>`), ...shownTags(r).map(t => `<button class="badge plain" data-rtag="t:${esc(norm(t))}" title="Show recipes tagged ${esc(t)}">${esc(t)}</button>`)].filter(Boolean).join('')}</div>
       ${!shopOnly && r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
       ${plan}
       <div class="sec"><span class="eyebrow">Ingredients</span></div>
@@ -2682,6 +2705,17 @@ function openRecipe(r, o = {}) {
         showCost();
       });
       if ($('rFull')) $('rFull').onclick = () => openRecipe(r, { ...o, shopOnly: false });
+      // a tag: go to the recipes page showing everything else with that tag
+      // (tap more tags there to narrow it down)
+      body.addEventListener('click', e => {
+        const t = e.target.closest('[data-rtag]');
+        if (!t) return;
+        closeSheet();
+        recFilter = new Set([t.dataset.rtag]);
+        saveRecFilter();
+        $('recSearch').value = '';
+        if (view === 'recipes') { renderRecipes(); window.scrollTo(0, 0); } else setView('recipes');
+      });
       if ($('rEdit')) $('rEdit').onclick = () => editRecipeMd(r);
       if ($('rDl')) $('rDl').onclick = () => download(slug(r.title) + '.md', r.md, 'text/markdown');
       if ($('rDel')) $('rDel').onclick = () => { closeSheet(); withUndo(`Deleted ${r.title}`, () => { S.recipes = S.recipes.filter(x => x.id !== r.id); }); };
