@@ -13,6 +13,8 @@ A shopping list web app for ticking things off as you shop. It matches the look 
 - **Meal plan**: plan recipes onto days of the week from the recipe sheet ("Meal plan" picker) or from the **Meals** tab. Planning adds the ingredients to your list and puts the meal on that day. Each planned meal has a **change** (⇄) and **remove** (×) button: removing or swapping a meal can take its ingredients back off your list (only what's still to get, and quantities other meals need are kept). Tap a planned meal to see its ingredients (scaled to the servings you planned) and the method while you cook, mark it cooked, move it to another day, or jot down non-recipe meals like "Leftovers".
 - **Ideas for your next meal**: once a meal is planned, the Meals tab spots fresh things it'll leave over (half a pot of cream, the rest of a bunch of spring onions) and suggests your recipes that use them up, or share ingredients you're already buying, along with what else they'd cost. If none of your recipes fit, it writes a Claude prompt for a recipe that uses up the leftovers.
 - **Recipes from Claude**: import `.md` recipe files (button, drag and drop, or paste). Scale the servings, untick what you already have (cupboard staples start unticked), and add the rest to your list. The **Claude prompt** button copies a ready-made request that makes Claude reply in the right format.
+- **Recipe library**: 14 ready-made recipes come with the app (chicken, steak and vegetarian dishes). Tap **Recipe library** on the Recipes page and tick the ones you want.
+- **Recipe filters**: filter your recipes by what's in them (**Chicken**, **Beef**, **Pork**, **Lamb**, **Fish & seafood**, **Vegetarian**), worked out from the ingredients, and by their tags (**Dinner**, **Quick**, **Curry**…), so it's easy to mix up the week. Pick several to see any of them, e.g. Chicken + Vegetarian. Tags and groups combine, so Vegetarian + Quick shows quick vegetarian recipes.
 - **Finish shop**: saves the ticked items to History and clears them. Anything you didn't get comes off the list too (it's noted on that shop in History, ready to add again), or you can choose to keep it for next time or move it to another list.
 - **History**: past shops (with "add these again"), most-bought items, and a searchable "Buy again" list.
 - **Share between phones**: Settings → *Start sharing* gives you a household code and an invite link. Any phone that joins sees the same lists, containers, recipes and history, and ticks show up on the other phone within a few seconds. Each phone keeps its own theme and open list.
@@ -20,7 +22,9 @@ A shopping list web app for ticking things off as you shop. It matches the look 
 
 ## Recipe format
 
-See [docs/recipe-format.md](docs/recipe-format.md). There's an example in [recipes/chicken-stir-fry.md](recipes/chicken-stir-fry.md).
+See [docs/recipe-format.md](docs/recipe-format.md). There's an example in [public/recipes/chicken-stir-fry.md](public/recipes/chicken-stir-fry.md).
+
+The recipe library is the `.md` files in [public/recipes/](public/recipes/). To add one, put the file there and add its name to [public/recipes/index.json](public/recipes/index.json).
 
 ## Putting it on a phone
 
