@@ -339,6 +339,11 @@ select.input{appearance:auto}
 .card.cont .actions{margin-top:auto}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .dropzone{outline:2px dashed var(--brand);outline-offset:6px;border-radius:var(--radius)}
+.chipbar{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:-2px -6px;padding:2px 6px}
+.chipbar::-webkit-scrollbar{display:none}
+.chipbar .lchip,.chipbar .lchip.on{padding:8px 13px;box-shadow:none}
+.chipbar .sep{flex:none;width:1px;background:var(--border-strong);margin:6px 2px}
+.badge.kind{background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c)}
 
 /* ============ Meal plan ============ */
 .weekbar{gap:12px;flex-wrap:nowrap}
@@ -663,9 +668,11 @@ details.trip[open] summary::after{transform:rotate(90deg)}
             <input type="file" id="mdFile" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple hidden>
             <button class="btn" data-act="paste-recipe"><svg><use href="#i-paste"/></svg>Paste</button>
             <button class="btn" data-act="claude-prompt"><svg><use href="#i-sparkle"/></svg>Claude prompt</button>
+            <button class="btn" data-act="library"><svg><use href="#i-book"/></svg>Recipe library</button>
             <span class="grow"></span>
             <div class="search" id="recSearchWrap"><svg><use href="#i-search"/></svg><input class="input" id="recSearch" placeholder="Search recipes" aria-label="Search recipes"></div>
           </div>
+          <div class="chipbar" id="recFilters" role="group" aria-label="Filter recipes" hidden></div>
           <div class="cards" id="recGrid"></div>
         </div>
       </section>
@@ -803,7 +810,7 @@ const RULES = [
   ['personal', 'shampoo|conditioner|soap|toothpaste|toothbrush|deodorant|razors?|paracetamol|ibuprofen|plasters|shower gel|moisturi[sz]er|sun ?cream|vitamins|hand ?wash|cotton|mouthwash|floss|nappies|wipes|sanitary|tampons'],
   ['pets', 'parrot|budgie|bird ?seed|cat (food|litter|treats)|dog (food|treats|biscuits)|kitten|puppy|pets?\\b|litter|millet|cuttlefish|pellets|seed mix'],
   ['frozen', 'frozen|ice ?cream|ice lolly|ice cubes|fish fingers|oven chips|chips\\b|peas\\b|petits pois|hash browns'],
-  ['cupboard', 'egg noodles|coconut (milk|cream)|peanut butter|tinned|tin of|can of|canned|black pepper|peppercorns|chilli (flakes|powder)|curry (paste|powder)|tomato (pur[eé]e|paste)|chopped tomatoes|plum tomatoes|passata|stock|dried|ground |baked beans|kidney beans|black beans|butter beans|cannellini|chickpeas|lentils|sweetcorn|garlic (powder|granules)|ginger (paste|powder)|lemon juice|lime juice'],
+  ['cupboard', 'fish sauce|oyster sauce|sweet chilli|egg noodles|coconut (milk|cream)|peanut butter|tinned|tin of|can of|canned|black pepper|peppercorns|chilli (flakes|powder)|curry (paste|powder)|tomato (pur[eé]e|paste)|chopped tomatoes|plum tomatoes|passata|stock|dried|ground |baked beans|kidney beans|black beans|butter beans|cannellini|chickpeas|lentils|sweetcorn|garlic (powder|granules)|ginger (paste|powder)|lemon juice|lime juice'],
   ['bakery', 'garlic bread'],
   ['fruitveg', 'butternut|acorn squash'],
   ['snacks', 'crisps|chocolate|biscuits?|sweets|popcorn|cookies?|haribo|cereal bars?|flapjacks?|doughnuts?|donuts?'],
@@ -813,7 +820,7 @@ const RULES = [
   ['bakery', 'bread|loaf|rolls?\\b|bagels?|croissants?|wraps?\\b|tortillas?|pittas?|naan|muffins?|crumpets?|baguette|brioche|cakes?\\b|buns?\\b|sourdough|scones?|pancakes|pastries'],
   ['fruitveg', 'apples?|bananas?|oranges?|pears?\\b|grapes|berr|strawberr|blueberr|raspberr|blackberr|lemons?\\b|limes?\\b|mangos?|mangoes|melon|pineapple|kiwi|plums?|peach|nectarine|cherr|pomegranate|papaya|figs?\\b|apricots?|clementines?|satsumas?|tangerines?|grapefruit|coconut|potato|onions?|garlic|carrots?|broccoli|cauliflower|cabbage|lettuce|spinach|kale|peppers?\\b|tomato|cucumber|courgette|zucchini|aubergine|mushroom|celery|leeks?|parsley|coriander|cilantro|basil|mint\\b|thyme|rosemary|dill|chives|ginger|chill?i(es|s)?\\b|squash|pumpkin|beetroot|radish|corn on the cob|avocados?|salad|rocket|spring onions?|shallots?|asparagus|green beans|runner beans|sprouts|parsnips?|turnips?|swede|fennel|beansprouts|pak choi|bok choy|herbs|lemongrass|okra|cress|chard|sugar ?snap|mangetout|edamame|artichoke|yams?|plantain|veg\\b|vegetables|fruit'],
   ['chilled', 'hummus|houmous|tofu|pesto|fresh pasta|dips?\\b|coleslaw|quiche|pastry|tzatziki|guacamole|salsa|ready meals?|pizza'],
-  ['cupboard', 'pasta|spaghetti|penne|fusilli|linguine|lasagne|macaroni|rice|noodles?|flour|sugar|oils?\\b|vinegar|salt|spices?|gravy|sauce|soy|ketchup|mayo(nnaise)?|mustard|honey|jam\\b|marmalade|cereal|oats|porridge|beans|cumin|paprika|turmeric|cinnamon|curry|oregano|nutmeg|garam masala|baking|yeast|cocoa|nuts\\b|almonds|cashews|peanuts|walnuts|seeds|breadcrumbs|couscous|quinoa|crackers|stock cubes?|syrup|vanilla|olives|capers|raisins|sultanas|cornflour|bicarbonate|gelatine|worcestershire|sriracha|tahini|miso|bulgur|polenta|cereal'],
+  ['cupboard', 'pasta|spaghetti|penne|fusilli|linguine|tagliatelle|rigatoni|farfalle|orzo|lasagne|macaroni|rice|noodles?|flour|sugar|oils?\\b|vinegar|salt|spices?|gravy|sauce|soy|ketchup|mayo(nnaise)?|mustard|honey|jam\\b|marmalade|cereal|oats|porridge|beans|cumin|paprika|turmeric|cinnamon|curry|oregano|nutmeg|garam masala|baking|yeast|cocoa|nuts\\b|almonds|cashews|peanuts|walnuts|seeds|breadcrumbs|couscous|quinoa|crackers|stock cubes?|syrup|vanilla|olives|capers|raisins|sultanas|cornflour|bicarbonate|gelatine|worcestershire|sriracha|tahini|miso|bulgur|polenta|cereal'],
 ].map(([cat, pat]) => [cat, new RegExp('(?:^|[^a-z])(?:' + pat + ')', 'i')]);
 function guessCat(name) {
   const known = S.catalog[mkey(name)];
@@ -894,7 +901,7 @@ const PRICES = [
   ['deodorant', 2.50, 1, 'each'], ['hand ?wash|soap', 1.20, 1, 'each'], ['paracetamol|ibuprofen', 0.60, 1, 'each'],
   ['cat food|dog food|pet food', 4.50, 1, 'each'], ['bird ?seed|parrot (food|seed)|seed mix', 4.00, 1, 'each'],
   // things whose names contain other things
-  ['stock', 1.00, 10, 'each', { ea: 500 }], ['coconut milk', 0.95, 400, 'ml'], ['coconut cream', 0.85, 160, 'ml'], ['peanut butter', 2.00, 340, 'g'],
+  ['chicken stock', 1.00, 10, 'each', { ea: 500 }], ['beef stock', 1.00, 10, 'each', { ea: 500 }], ['stock', 1.00, 10, 'each', { ea: 500 }], ['coconut milk', 0.95, 400, 'ml'], ['coconut cream', 0.85, 160, 'ml'], ['peanut butter', 2.00, 340, 'g'],
   ['butter beans|chickpeas|kidney beans|black beans|cannellini|haricot|borlotti|baked beans|mixed beans', 0.65, 400, 'g'],
   ['chopped tomatoes|plum tomatoes|tinned tomatoes|canned tomatoes', 0.50, 400, 'g'], ['tomato (pur[eé]e|paste)', 0.60, 200, 'g'],
   ['passata', 0.75, 500, 'g'], ['sun.?dried tomato', 2.00, 280, 'g'], ['sweetcorn', 0.65, 325, 'g'],
@@ -968,7 +975,7 @@ const PRICES = [
   ['leeks?', 0.55, 1, 'each', { ea: 200 }], ['parsnips?', 0.75, 500, 'g', { ea: 120, keeps: 1 }], ['beetroot', 0.80, 250, 'g'],
   ['avocados?', 0.80, 1, 'each'], ['asparagus', 2.00, 250, 'g'], ['green beans|fine beans|runner beans', 1.10, 220, 'g'],
   ['pak choi|bok choy', 1.20, 200, 'g'], ['beansprouts', 0.80, 300, 'g'], ['corn on the cob', 1.00, 2, 'each'], ['lemongrass', 0.90, 2, 'each'],
-  ['coriander|cilantro|parsley|basil|mint\\b|dill|chives|tarragon|thyme|rosemary|sage\\b|herbs', 0.75, 30, 'g'],
+  ['coriander|cilantro|parsley|basil|mint\\b|dill|chives|tarragon|thyme|rosemary|sage\\b|herbs', 0.75, 30, 'g', { ea: 2 }],
   ['lemons?', 0.35, 1, 'each', { keeps: 1 }], ['limes?', 0.30, 1, 'each', { keeps: 1 }], ['apples?', 1.50, 6, 'each', { keeps: 1 }],
   ['bananas?', 0.85, 5, 'each'], ['oranges?', 0.40, 1, 'each', { keeps: 1 }],
   ['easy peelers?|clementines?|satsumas?|tangerines?|mandarins?', 1.60, 600, 'g', { ea: 70, keeps: 1 }], ['pears?\\b', 0.40, 1, 'each'],
@@ -1450,42 +1457,6 @@ function mdBlock(md) {
 }
 const isStaple = name => { const n = norm(name); return S.settings.staples.some(s => { const k = norm(s); return k && (n === k || n === k + 's'); }); };
 
-const EXAMPLE_RECIPE = `# Chicken & Veg Stir Fry
-Serves: 4
-Time: 25 min
-Tags: dinner, quick
-
-A quick weeknight stir fry with a sticky soy and honey sauce.
-
-## Ingredients
-- 400g chicken breast, sliced into strips
-- 1 red pepper, sliced
-- 1 head of broccoli, cut into small florets
-- 1 carrot, cut into matchsticks
-- 4 spring onions, sliced
-- 2 cloves garlic, crushed
-- 1 thumb-sized piece of ginger, grated
-- 300g egg noodles
-- 1 tbsp vegetable oil
-
-### For the sauce
-- 3 tbsp soy sauce
-- 1 tbsp honey
-- 1 tsp cornflour
-- 1 lime, juiced
-
-## Method
-1. Cook the noodles following the pack instructions, then drain and toss with a little oil.
-2. Mix the soy sauce, honey, cornflour, lime juice and 3 tbsp water in a small bowl.
-3. Heat the oil in a wok over a high heat and stir fry the chicken for 5–6 minutes until golden and cooked through.
-4. Add the pepper, broccoli and carrot and cook for 3 minutes, then add the garlic, ginger and most of the spring onions for 1 minute more.
-5. Pour in the sauce and noodles and toss for 1–2 minutes until glossy and hot.
-6. Serve topped with the rest of the spring onions.
-
-## Notes
-- Swap the chicken for prawns or tofu.
-- Keeps in the fridge for 2 days.
-`;
 const claudePrompt = (ask = 'Please write a recipe for [DISH] as a Markdown (.md) file I can import into my shopping list app.') => `${ask} Use exactly this layout:
 
 # Recipe name
@@ -2434,28 +2405,94 @@ function recipeMeta(r) {
   return [r.serves ? `Serves ${fmtNum(r.serves)}` : '', r.time, plural(r.ingredients.length, 'ingredient'),
     c && (r.serves ? `about ${gbp(c.used / r.serves)} a serving` : `about ${gbp(c.shop)}`)].filter(Boolean).join(' · ');
 }
+/* ----- what's in a recipe: chicken, beef, vegetarian… ----- */
+// Worked out from the ingredients, checked in this order (so "pork mince" is
+// pork, and "tuna steak" is fish)
+const KINDS = [
+  ['fish', 'Fish & seafood', '#2a6fc4', 'fish|salmon|cod\\b|tuna|prawns?|shrimps?|haddock|mackerel|trout|sea ?bass|sea ?bream|sardines?|anchov|crab|lobster|mussels?|squid|calamari|scallops?|pollock|hake|basa|clams?|kippers?'],
+  ['pork', 'Pork', '#c2557f', 'pork|bacon|ham\\b|sausages?|chorizo|pancetta|prosciutto|salami|pepperoni|gammon|lardons'],
+  ['lamb', 'Lamb', '#7a55c9', 'lamb|mutton'],
+  ['chicken', 'Chicken', '#c27c00', 'chicken'],
+  ['beef', 'Beef', '#d23a45', 'beef|steaks?\\b|mince\\b|sirloin|rump|rib.?eye|brisket|flank|bavette|skirt steak|veal|oxtail'],
+].map(([id, name, color, pat]) => ({ id, name, color, rx: new RegExp('(?:^|[^a-z])(?:' + pat + ')') }));
+const VEG = { id: 'veg', name: 'Vegetarian', color: '#12936f' };
+const KIND = Object.fromEntries([...KINDS, VEG].map(k => [k.id, k]));
+// Tags that mean the same as one of the groups above (they don't get their own filter)
+const TAG_KIND = { chicken: 'chicken', beef: 'beef', pork: 'pork', lamb: 'lamb', fish: 'fish', seafood: 'fish', vegetarian: 'veg', veggie: 'veg' };
+const MEAT_FREE = /(?:^|[^a-z])(?:veggie|vegetarian|vegan|quorn|meat.?free|plant.?based|tofu|cauliflower|mushroom|halloumi|bean)/;
+// Only there for flavour, so "chicken stock" doesn't make a beef stew a chicken dish
+const FLAVOUR = /(?:^|[^a-z])(?:stock|broth|bouillon|gravy|sauce|paste|fat|dripping|seasoning)/;
+// Not vegetarian, even though they're not a main ingredient
+const NOT_VEG = /(?:^|[^a-z])(?:turkey|duck|goose|venison|rabbit|pheasant|gelatine?|lard\b|suet|worcestershire|anchov|liver)/;
+function recipeKinds(r) {
+  const tags = r.tags.map(norm), out = new Set();
+  let meaty = false;
+  for (const i of r.ingredients) {
+    const n = ' ' + norm(i.name);
+    if (MEAT_FREE.test(n)) continue;
+    const k = KINDS.find(k => k.rx.test(n));
+    if (k || NOT_VEG.test(n)) meaty = meaty || !i.optional;
+    if (k && !FLAVOUR.test(n)) out.add(k.id);
+  }
+  for (const t of tags) if (TAG_KIND[t] && TAG_KIND[t] !== 'veg') out.add(TAG_KIND[t]);
+  return tags.some(t => TAG_KIND[t] === 'veg' || t === 'vegan') || (r.ingredients.length && !meaty) ? ['veg'] : [...out];
+}
+const kindBadge = id => `<span class="badge kind" style="--c:${KIND[id].color}">${esc(KIND[id].name)}</span>`;
+const shownTags = r => r.tags.filter(t => !TAG_KIND[norm(t)]);
+
+// Which filters are on: "k:chicken" for a group, "t:dinner" for a tag. Kept on this phone.
+let recFilter = new Set();
+try { recFilter = new Set(JSON.parse(localStorage.getItem('shop_recfilter')) || []); } catch {}
+function saveRecFilter() { try { localStorage.setItem('shop_recfilter', JSON.stringify([...recFilter])); } catch {} }
+// Groups are "any of" (chicken or vegetarian), tags are "any of" (dinner or lunch),
+// and a recipe has to match both when both are picked
+function passesFilter(r) {
+  const ks = [...recFilter].filter(f => f[0] === 'k').map(f => f.slice(2)), ts = [...recFilter].filter(f => f[0] === 't').map(f => f.slice(2));
+  const tags = r.tags.map(norm);
+  return (!ks.length || ks.some(k => recipeKinds(r).includes(k))) && (!ts.length || ts.some(t => tags.includes(t)));
+}
+function renderRecFilters() {
+  const kc = new Map(), tc = new Map();
+  for (const r of S.recipes) {
+    for (const k of recipeKinds(r)) kc.set(k, (kc.get(k) || 0) + 1);
+    for (const t of new Set(shownTags(r).map(norm))) if (t) tc.set(t, (tc.get(t) || 0) + 1);
+  }
+  // forget filters for things that have gone
+  for (const f of [...recFilter]) if (!(f[0] === 'k' ? kc : tc).has(f.slice(2))) recFilter.delete(f);
+  const chip = (key, label, n) => `<button class="lchip${recFilter.has(key) ? ' on' : ''}" data-rf="${esc(key)}" aria-pressed="${recFilter.has(key)}">${esc(label)}<span class="n">${n}</span></button>`;
+  const kinds = [...KINDS, VEG].filter(k => kc.has(k.id)).map(k => chip('k:' + k.id, k.name, kc.get(k.id)));
+  const tags = [...tc].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t, n]) => chip('t:' + t, capFirst(t), n));
+  const bar = $('recFilters'), x = bar.scrollLeft;
+  bar.hidden = S.recipes.length < 2 || kinds.length + tags.length < 2;
+  bar.innerHTML = `<button class="lchip${recFilter.size ? '' : ' on'}" data-rf="" aria-pressed="${!recFilter.size}">All</button>${kinds.join('')}${kinds.length && tags.length ? '<span class="sep"></span>' : ''}${tags.join('')}`;
+  bar.scrollLeft = x;
+}
 function renderRecipes() {
   const q = norm($('recSearch').value);
   $('recSearchWrap').hidden = S.recipes.length < 4;
   const g = $('recGrid');
+  renderRecFilters();
   if (!S.recipes.length) {
     g.innerHTML = `<div class="card empty" style="grid-column:1/-1">
       <div class="brandmark bigmark">${ico('book')}</div>
       <h2>Shop for recipes</h2>
-      <p>Ask Claude for a recipe as a Markdown file, import it here, then add the ingredients you need to your list — scaled to however many you’re feeding.</p>
+      <p>Add recipes from the library, or ask Claude for one as a Markdown file and import it here. Then add the ingredients you need to your list, scaled to however many you’re feeding.</p>
       <ol class="steps"><li>Tap <b>Claude prompt</b> to copy a ready-made request, and paste it into Claude with the dish you want.</li><li>Download the <b>.md</b> file Claude gives you.</li><li>Tap <b>Import .md</b> and pick the file — or drop it on this page, or use <b>Paste</b>.</li></ol>
-      <div class="actions"><button class="btn solid" data-act="claude-prompt">${ico('sparkle')}Copy Claude prompt</button><button class="btn" data-act="example">Try an example</button></div>
+      <div class="actions"><button class="btn solid" data-act="library">${ico('book')}Browse the recipe library</button><button class="btn" data-act="claude-prompt">${ico('sparkle')}Copy Claude prompt</button></div>
     </div>`;
     return;
   }
   const words = q.split(' ').filter(Boolean);
-  const list = S.recipes.filter(r => !words.length || words.every(w => norm([r.title, r.tags.join(' '), r.ingredients.map(i => i.name).join(' ')].join(' ')).includes(w)));
-  g.innerHTML = list.map(r => `<div class="card cont" data-rid="${r.id}">
+  const list = S.recipes.filter(r => passesFilter(r) && (!words.length || words.every(w => norm([r.title, r.tags.join(' '), recipeKinds(r).map(k => KIND[k].name).join(' '), r.ingredients.map(i => i.name).join(' ')].join(' ')).includes(w))));
+  g.innerHTML = list.map(r => {
+    const ks = recipeKinds(r), tags = shownTags(r);
+    return `<div class="card cont" data-rid="${r.id}">
       <div class="cont-h"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><div><b>${esc(r.title)}</b><small>${esc(recipeMeta(r))}</small></div></div>
-      ${r.tags.length ? `<div class="tags">${r.tags.map(t => `<span class="badge plain">${esc(t)}</span>`).join('')}</div>` : ''}
+      ${ks.length || tags.length ? `<div class="tags">${ks.map(kindBadge).join('')}${tags.map(t => `<span class="badge plain">${esc(t)}</span>`).join('')}</div>` : ''}
       <p class="prev">${esc(r.ingredients.map(i => i.name).join(', ')) || '<span class="muted">No ingredients found</span>'}</p>
       <div class="actions"><button class="btn solid" data-r="shop"${r.ingredients.length ? '' : ' disabled'}>${ico('basket')}Shop for it</button><button class="btn" data-r="open">Open</button></div>
-    </div>`).join('') || `<p class="muted">No recipes match “${esc($('recSearch').value)}”.</p>`;
+    </div>`;
+  }).join('') || `<div class="muted" style="grid-column:1/-1">No recipes match${q ? ` “${esc($('recSearch').value)}”` : ''}${recFilter.size ? `${q ? ' and' : ''} these filters. <button class="linkbtn" data-rf="">Show all recipes</button>` : '.'}</div>`;
 }
 $('recSearch').addEventListener('input', renderRecipes);
 $('v-recipes').addEventListener('click', e => {
@@ -2463,7 +2500,14 @@ $('v-recipes').addEventListener('click', e => {
   if (a) {
     if (a.dataset.act === 'claude-prompt') return claudePromptSheet();
     if (a.dataset.act === 'paste-recipe') return pasteRecipe();
-    if (a.dataset.act === 'example') return importTexts([{ text: EXAMPLE_RECIPE, name: 'chicken-stir-fry.md' }]);
+    if (a.dataset.act === 'library') return recipeLibrary();
+  }
+  const f = e.target.closest('[data-rf]');
+  if (f) {
+    const k = f.dataset.rf;
+    if (!k) recFilter.clear(); else if (!recFilter.delete(k)) recFilter.add(k);
+    saveRecFilter();
+    return renderRecipes();
   }
   const card = e.target.closest('[data-rid]');
   if (!card) return;
@@ -2501,6 +2545,42 @@ function importTexts(texts) {
   if (added + updated === 1) openRecipe(last);
   const msg = [added && `${plural(added, 'recipe')} imported`, updated && `${plural(updated, 'recipe')} updated`].filter(Boolean).join(', ');
   toast(noIng ? `${msg} — couldn’t find an “## Ingredients” section in ${noIng === 1 ? 'one' : noIng}` : msg, { err: !!noIng });
+}
+// Ready-made recipes that come with the app (public/recipes, listed in index.json)
+async function recipeLibrary() {
+  let lib;
+  try {
+    const res = await fetch('recipes/index.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error();
+    lib = (await Promise.all((await res.json()).map(async name => {
+      const r = await fetch('recipes/' + name, { cache: 'no-cache' });
+      if (!r.ok) return null;
+      const text = await r.text();
+      return { name, text, r: parseRecipe(text, name) };
+    }))).filter(x => x && x.r.ingredients.length);
+  } catch { return toast('Couldn’t open the recipe library — check you’re online', { err: true }); }
+  const have = new Set(S.recipes.map(r => norm(r.title)));
+  const rows = lib.filter(x => !have.has(norm(x.r.title))).map(x => ({ ...x, checked: true }));
+  const got = lib.filter(x => have.has(norm(x.r.title)));
+  const row = (x, k) => `<label class="chk"><input type="checkbox" data-k="${k}" checked><span class="nm">${esc(x.r.title)}<small>${esc(recipeMeta(x.r))}</small></span>${recipeKinds(x.r).map(kindBadge).join('')}</label>`;
+  openSheet({
+    title: 'Recipe library', wide: true,
+    body: `<p class="note" style="margin:0 0 10px">Recipes that come with the app. Tick the ones you want and they’re added to your recipes, ready to plan and shop for.</p>
+      ${rows.length ? `<div class="selbar"><button class="linkbtn" data-sel="all">Tick all</button><button class="linkbtn" data-sel="none">Untick all</button></div>${rows.map(row).join('')}`
+        : '<p style="margin:4px 0">You’ve already got every recipe in the library.</p>'}
+      ${got.length ? `<div class="sec"><span class="eyebrow">Already in your recipes</span></div><p class="note" style="margin:0">${esc(got.map(x => x.r.title).join(', '))}</p>` : ''}`,
+    foot: rows.length ? `<div class="actions"><button class="btn" data-close>Cancel</button><button class="btn solid" id="libOk"></button></div>` : `<div class="actions"><button class="btn" data-close>Close</button></div>`,
+    mount: body => {
+      if (!rows.length) return;
+      wirePicker(body, rows, $('libOk'), 'Add', n => [`${ico('plus')}${n ? `Add ${plural(n, 'recipe')}` : 'Nothing ticked'}`, !n]);
+      $('libOk').onclick = () => {
+        const picked = rows.filter(x => x.checked);
+        closeSheet();
+        // (each one goes to the top, so add them backwards to keep the library's order)
+        importTexts(picked.reverse().map(({ text, name }) => ({ text, name })));
+      };
+    },
+  });
 }
 function pasteRecipe() {
   openSheet({
