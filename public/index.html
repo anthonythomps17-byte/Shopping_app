@@ -817,7 +817,7 @@ const RULES = [
   ['personal', 'shampoo|conditioner|soap|toothpaste|toothbrush|deodorant|razors?|paracetamol|ibuprofen|plasters|shower gel|moisturi[sz]er|sun ?cream|vitamins|hand ?wash|cotton|mouthwash|floss|nappies|wipes|sanitary|tampons'],
   ['pets', 'parrot|budgie|bird ?seed|cat (food|litter|treats)|dog (food|treats|biscuits)|kitten|puppy|pets?\\b|litter|millet|cuttlefish|pellets|seed mix'],
   ['frozen', 'frozen|ice ?cream|ice lolly|ice cubes|fish fingers|oven chips|chips\\b|peas\\b|petits pois|hash browns'],
-  ['cupboard', 'fish sauce|oyster sauce|sweet chilli|gochujang|fennel seeds|chutney|mint sauce|cranberry sauce|taco shells?|laksa|seasoning|bay lea(f|ves)|vinegar|ketchup|breadcrumbs|panko|bread flour|strong (white )?flour|egg noodles|coconut (milk|cream)|peanut butter|tinned|tin of|can of|canned|black pepper|peppercorns|chilli (flakes|powder)|curry (paste|powder)|tomato (pur[eé]e|paste)|chopped tomatoes|plum tomatoes|passata|stock|dried|ground |baked beans|kidney beans|black beans|butter beans|cannellini|chickpeas|lentils|sweetcorn|garlic (powder|granules)|ginger (paste|powder)|lemon juice|lime juice'],
+  ['cupboard', 'fish sauce|oyster sauce|sweet chilli|gochujang|fennel seeds|corned beef|chutney|mint sauce|cranberry sauce|taco shells?|laksa|seasoning|bay lea(f|ves)|vinegar|ketchup|breadcrumbs|panko|bread flour|strong (white )?flour|egg noodles|coconut (milk|cream)|peanut butter|tinned|tin of|can of|canned|black pepper|peppercorns|chilli (flakes|powder)|curry (paste|powder)|tomato (pur[eé]e|paste)|chopped tomatoes|plum tomatoes|passata|stock|dried|ground |baked beans|kidney beans|black beans|butter beans|cannellini|chickpeas|lentils|sweetcorn|garlic (powder|granules)|ginger (paste|powder)|lemon juice|lime juice'],
   ['bakery', 'garlic bread'],
   ['fruitveg', 'butternut|acorn squash'],
   ['snacks', 'crisps|chocolate|biscuits?|sweets|popcorn|cookies?|haribo|cereal bars?|flapjacks?|doughnuts?|donuts?'],
@@ -911,7 +911,7 @@ const PRICES = [
   ['chicken stock', 1.00, 10, 'each', { ea: 500 }], ['beef stock', 1.00, 10, 'each', { ea: 500 }], ['stock', 1.00, 10, 'each', { ea: 500 }], ['coconut milk', 0.95, 400, 'ml'], ['coconut cream', 0.85, 160, 'ml'], ['peanut butter', 2.00, 340, 'g'],
   ['butter beans|chickpeas|kidney beans|black beans|cannellini|haricot|borlotti|baked beans|mixed beans', 0.65, 400, 'g'],
   ['chopped tomatoes|plum tomatoes|tinned tomatoes|canned tomatoes', 0.50, 400, 'g'], ['tomato (pur[eé]e|paste)', 0.60, 200, 'g'],
-  ['passata', 0.75, 500, 'g'], ['sun.?dried tomato', 2.00, 280, 'g'], ['mango chutney|chutney', 1.50, 340, 'g'], ['mint sauce', 1.00, 165, 'g'], ['cranberry sauce', 1.20, 200, 'g'], ['dried apricots?', 1.60, 250, 'g'], ['sweetcorn', 0.65, 325, 'g'],
+  ['passata', 0.75, 500, 'g'], ['sun.?dried tomato', 2.00, 280, 'g'], ['mango chutney|chutney', 1.50, 340, 'g'], ['corned beef', 2.50, 340, 'g'], ['mint sauce', 1.00, 165, 'g'], ['cranberry sauce', 1.20, 200, 'g'], ['dried apricots?', 1.60, 250, 'g'], ['sweetcorn', 0.65, 325, 'g'],
   ['tuna steaks?', 4.50, 2, 'each', { ea: 125 }], ['tuna', 1.10, 145, 'g'], ['egg noodles|rice noodles|udon|noodles', 1.10, 300, 'g'],
   ['fresh pasta|tortellini|ravioli|gnocchi', 2.00, 300, 'g'], ['mangetout|sugar.?snap', 1.10, 150, 'g'],
   ['lemon juice|lime juice', 0.70, 250, 'ml', { keeps: 1 }], ['orange juice|apple juice|juice', 1.60, 1000, 'ml'],
@@ -2450,6 +2450,11 @@ function recipeKinds(r) {
 }
 const kindBadge = id => `<span class="badge kind" style="--c:${KIND[id].color}">${esc(KIND[id].name)}</span>`;
 const shownTags = r => r.tags.filter(t => !TAG_KIND[norm(t)]);
+// Budget: about £1.50 a serving or less, from the cost estimates (so it follows the
+// Budget/Standard/Premium price setting, and goes away if estimates are turned off)
+const BUDGET = 1.5;
+const isBudget = r => { const c = r.serves && recipeCost(r); return !!c && c.used / r.serves <= BUDGET; };
+const budgetFilterBadge = () => { const on = recFilter.has('b:budget'); return `<button class="badge open${on ? ' on' : ''}" data-rf="b:budget" aria-pressed="${on}" title="${on ? 'Stop filtering by budget' : `Show only recipes about ${gbp(BUDGET)} a serving or less`}">Budget</button>`; };
 // The same badges as buttons that switch that filter on and off
 const kindFilterBadge = id => { const on = recFilter.has('k:' + id); return `<button class="badge kind${on ? ' on' : ''}" style="--c:${KIND[id].color}" data-rf="k:${id}" aria-pressed="${on}" title="${on ? 'Stop filtering by' : 'Show only'} ${esc(KIND[id].name)}">${esc(KIND[id].name)}</button>`; };
 const tagFilterBadge = t => { const k = 't:' + norm(t), on = recFilter.has(k); return `<button class="badge plain${on ? ' on' : ''}" data-rf="${esc(k)}" aria-pressed="${on}" title="${on ? 'Stop filtering by' : 'Show only'} ${esc(t)}">${esc(t)}</button>`; };
@@ -2464,7 +2469,7 @@ function saveRecFilter() { try { localStorage.setItem('shop_recfilter', JSON.str
 function passesFilter(r) {
   const ks = [...recFilter].filter(f => f[0] === 'k').map(f => f.slice(2)), ts = [...recFilter].filter(f => f[0] === 't').map(f => f.slice(2));
   const tags = r.tags.map(norm), hasTag = t => tags.includes(t);
-  return (!ks.length || ks.some(k => recipeKinds(r).includes(k))) && (!ts.length || (recMatch === 'any' ? ts.some(hasTag) : ts.every(hasTag)));
+  return (!recFilter.has('b:budget') || isBudget(r)) && (!ks.length || ks.some(k => recipeKinds(r).includes(k))) && (!ts.length || (recMatch === 'any' ? ts.some(hasTag) : ts.every(hasTag)));
 }
 // "12 of 114 recipes · match all / any of the tags · Clear"
 function renderRecInfo(shown, q) {
@@ -2477,14 +2482,17 @@ function renderRecInfo(shown, q) {
 }
 function renderRecFilters() {
   const kc = new Map(), tc = new Map();
+  let bc = 0;
   for (const r of S.recipes) {
+    if (isBudget(r)) bc++;
     for (const k of recipeKinds(r)) kc.set(k, (kc.get(k) || 0) + 1);
     for (const t of new Set(shownTags(r).map(norm))) if (t) tc.set(t, (tc.get(t) || 0) + 1);
   }
   // forget filters for things that have gone
-  for (const f of [...recFilter]) if (!(f[0] === 'k' ? kc : tc).has(f.slice(2))) recFilter.delete(f);
+  for (const f of [...recFilter]) if (f[0] === 'b' ? !bc : !(f[0] === 'k' ? kc : tc).has(f.slice(2))) recFilter.delete(f);
   const chip = (key, label, n) => `<button class="lchip${recFilter.has(key) ? ' on' : ''}" data-rf="${esc(key)}" aria-pressed="${recFilter.has(key)}">${esc(label)}<span class="n">${n}</span></button>`;
   const kinds = KIND_ORDER.filter(k => kc.has(k)).map(k => chip('k:' + k, KIND[k].name, kc.get(k)));
+  if (bc) kinds.push(chip('b:budget', 'Budget', bc));
   const tags = [...tc].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t, n]) => chip('t:' + t, tagLabel(t), n));
   const bar = $('recFilters'), x = bar.scrollLeft;
   bar.hidden = S.recipes.length < 2 || kinds.length + tags.length < 2;
@@ -2507,13 +2515,13 @@ function renderRecipes() {
     return;
   }
   const words = q.split(' ').filter(Boolean);
-  const list = S.recipes.filter(r => passesFilter(r) && (!words.length || words.every(w => norm([r.title, r.tags.join(' '), recipeKinds(r).map(k => KIND[k].name).join(' '), r.ingredients.map(i => i.name).join(' ')].join(' ')).includes(w))));
+  const list = S.recipes.filter(r => passesFilter(r) && (!words.length || words.every(w => norm([r.title, r.tags.join(' '), recipeKinds(r).map(k => KIND[k].name).join(' '), isBudget(r) ? 'budget' : '', r.ingredients.map(i => i.name).join(' ')].join(' ')).includes(w))));
   renderRecInfo(list.length, q);
   g.innerHTML = list.map(r => {
-    const ks = recipeKinds(r), tags = shownTags(r);
+    const ks = recipeKinds(r), tags = shownTags(r), cheap = isBudget(r);
     return `<div class="card cont" data-rid="${r.id}">
       <div class="cont-h"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><div><b>${esc(r.title)}</b><small>${esc(recipeMeta(r))}</small></div></div>
-      ${ks.length || tags.length ? `<div class="tags">${ks.map(kindFilterBadge).join('')}${tags.map(tagFilterBadge).join('')}</div>` : ''}
+      ${ks.length || tags.length || cheap ? `<div class="tags">${ks.map(kindFilterBadge).join('')}${cheap ? budgetFilterBadge() : ''}${tags.map(tagFilterBadge).join('')}</div>` : ''}
       <p class="prev">${esc(r.ingredients.map(i => i.name).join(', ')) || '<span class="muted">No ingredients found</span>'}</p>
       <div class="actions"><button class="btn solid" data-r="shop"${r.ingredients.length ? '' : ' disabled'}>${ico('basket')}Shop for it</button><button class="btn" data-r="open">Open</button></div>
     </div>`;
@@ -2669,7 +2677,7 @@ function openRecipe(r, o = {}) {
   openSheet({
     title: r.title, wide: true,
     body: `${replace ? `<div class="banner" style="margin-bottom:12px"><div class="bico">${ico('repeat')}</div><p><b>Instead of ${esc(mealTitle(replace))}</b>${o.unshop ? 'Its ingredients come off your list.' : 'Anything already on your list for it stays there.'}</p></div>` : ''}
-      <div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, ...recipeKinds(r).map(k => `<button class="badge kind" style="--c:${KIND[k].color}" data-rtag="k:${k}" title="Show ${esc(KIND[k].name.toLowerCase())} recipes">${esc(KIND[k].name)}</button>`), ...shownTags(r).map(t => `<button class="badge plain" data-rtag="t:${esc(norm(t))}" title="Show recipes tagged ${esc(t)}">${esc(t)}</button>`)].filter(Boolean).join('')}</div>
+      <div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, ...recipeKinds(r).map(k => `<button class="badge kind" style="--c:${KIND[k].color}" data-rtag="k:${k}" title="Show ${esc(KIND[k].name.toLowerCase())} recipes">${esc(KIND[k].name)}</button>`), isBudget(r) && `<button class="badge open" data-rtag="b:budget" title="Show recipes about ${gbp(BUDGET)} a serving or less">Budget</button>`, ...shownTags(r).map(t => `<button class="badge plain" data-rtag="t:${esc(norm(t))}" title="Show recipes tagged ${esc(t)}">${esc(t)}</button>`)].filter(Boolean).join('')}</div>
       ${!shopOnly && r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
       ${plan}
       <div class="sec"><span class="eyebrow">Ingredients</span></div>
