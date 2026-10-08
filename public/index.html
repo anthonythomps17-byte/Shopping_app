@@ -447,6 +447,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
 .md code{font-family:var(--mono);font-size:12.5px;background:var(--surface-3);padding:1px 5px;border-radius:5px}
 .erow{display:grid;grid-template-columns:minmax(0,1fr) 120px auto;gap:8px;align-items:center;padding:5px 0}
 .erow .input{padding:9px 11px;font-size:15px}
+.erow.one{grid-template-columns:minmax(0,1fr) auto}
 .menu{display:flex;flex-direction:column}
 .menu button{display:flex;align-items:center;gap:12px;width:100%;padding:13px 6px;border:none;border-bottom:1px solid var(--surface-3);background:none;font-size:14.5px;font-weight:650;text-align:left;border-radius:0}
 .menu button:last-child{border-bottom:none}
@@ -525,6 +526,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
   .sheet-foot .actions .btn.solid{flex:1}
   .sheet-foot select.input{max-width:none;width:100%}
   .erow{grid-template-columns:minmax(0,1fr) 88px auto}
+  .erow.one{grid-template-columns:minmax(0,1fr) auto}
   .days{grid-template-columns:minmax(0,1fr)}
   .weekbar .btn.sm{padding:7px 10px}
   .banner{flex-wrap:wrap}
@@ -670,11 +672,10 @@ details.trip[open] summary::after{transform:rotate(90deg)}
       <section class="view" id="v-recipes">
         <div class="stack">
           <div class="toolbar">
-            <label class="btn solid" for="mdFile"><svg><use href="#i-upload"/></svg>Import .md</label>
-            <input type="file" id="mdFile" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple hidden>
-            <button class="btn" data-act="paste-recipe"><svg><use href="#i-paste"/></svg>Paste</button>
-            <button class="btn" data-act="claude-prompt"><svg><use href="#i-sparkle"/></svg>Claude prompt</button>
+            <button class="btn solid" data-act="new-recipe"><svg><use href="#i-plus"/></svg>New recipe</button>
             <button class="btn" data-act="library"><svg><use href="#i-book"/></svg>Recipe library</button>
+            <button class="btn" data-act="import-menu"><svg><use href="#i-upload"/></svg>Import</button>
+            <input type="file" id="mdFile" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple hidden>
             <span class="grow"></span>
             <div class="search" id="recSearchWrap"><svg><use href="#i-search"/></svg><input class="input" id="recSearch" placeholder="Search recipes" aria-label="Search recipes"></div>
           </div>
@@ -1446,7 +1447,8 @@ function mdInline(s) {
 }
 function mdBlock(md) {
   let out = '', list = null, para = [];
-  const flushP = () => { if (para.length) { out += `<p>${mdInline(para.join(' '))}</p>`; para = []; } };
+  // (line breaks inside a paragraph are kept, so notes read the way they were typed)
+  const flushP = () => { if (para.length) { out += `<p>${para.map(mdInline).join('<br>')}</p>`; para = []; } };
   const flushL = () => { if (list) { out += `<${list.t}>${list.items.map(i => `<li>${mdInline(i)}</li>`).join('')}</${list.t}>`; list = null; } };
   for (const raw of String(md || '').split('\n')) {
     const line = raw.trim();
@@ -1464,7 +1466,8 @@ function mdBlock(md) {
   flushP(); flushL();
   return out;
 }
-const isStaple = name => { const n = norm(name); return S.settings.staples.some(s => { const k = norm(s); return k && (n === k || n === k + 's'); }); };
+// (plurals count too, except "peppers", which are the vegetable, not the seasoning)
+const isStaple = name => { const n = norm(name); return S.settings.staples.some(s => { const k = norm(s); return k && (n === k || (n === k + 's' && k !== 'pepper')); }); };
 
 const claudePrompt = (ask = 'Please write a recipe for [DISH] as a Markdown (.md) file I can import into my shopping list app.') => `${ask} Use exactly this layout:
 
@@ -2455,6 +2458,7 @@ const shownTags = r => r.tags.filter(t => !TAG_KIND[norm(t)]);
 // Budget/Standard/Premium price setting, and goes away if estimates are turned off)
 const BUDGET = 1.5;
 const isBudget = r => { const c = r.serves && recipeCost(r); return !!c && c.used / r.serves <= BUDGET; };
+const ownFilterBadge = () => { const on = recFilter.has('o:own'); return `<button class="badge info${on ? ' on' : ''}" data-rf="o:own" aria-pressed="${on}" title="${on ? 'Stop filtering by' : 'Show only'} your own recipes">Our recipe</button>`; };
 const budgetFilterBadge = () => { const on = recFilter.has('b:budget'); return `<button class="badge open${on ? ' on' : ''}" data-rf="b:budget" aria-pressed="${on}" title="${on ? 'Stop filtering by budget' : `Show only recipes about ${gbp(BUDGET)} a serving or less`}">Budget</button>`; };
 // The same badges as buttons that switch that filter on and off
 const kindFilterBadge = id => { const on = recFilter.has('k:' + id); return `<button class="badge kind${on ? ' on' : ''}" style="--c:${KIND[id].color}" data-rf="k:${id}" aria-pressed="${on}" title="${on ? 'Stop filtering by' : 'Show only'} ${esc(KIND[id].name)}">${esc(KIND[id].name)}</button>`; };
@@ -2470,7 +2474,7 @@ function saveRecFilter() { try { localStorage.setItem('shop_recfilter', JSON.str
 function passesFilter(r) {
   const ks = [...recFilter].filter(f => f[0] === 'k').map(f => f.slice(2)), ts = [...recFilter].filter(f => f[0] === 't').map(f => f.slice(2));
   const tags = r.tags.map(norm), hasTag = t => tags.includes(t);
-  return (!recFilter.has('b:budget') || isBudget(r)) && (!ks.length || ks.some(k => recipeKinds(r).includes(k))) && (!ts.length || (recMatch === 'any' ? ts.some(hasTag) : ts.every(hasTag)));
+  return (!recFilter.has('o:own') || r.own) && (!recFilter.has('b:budget') || isBudget(r)) && (!ks.length || ks.some(k => recipeKinds(r).includes(k))) && (!ts.length || (recMatch === 'any' ? ts.some(hasTag) : ts.every(hasTag)));
 }
 // "12 of 114 recipes · match all / any of the tags · Clear"
 function renderRecInfo(shown, q) {
@@ -2483,17 +2487,19 @@ function renderRecInfo(shown, q) {
 }
 function renderRecFilters() {
   const kc = new Map(), tc = new Map();
-  let bc = 0;
+  let bc = 0, oc = 0;
   for (const r of S.recipes) {
     if (isBudget(r)) bc++;
+    if (r.own) oc++;
     for (const k of recipeKinds(r)) kc.set(k, (kc.get(k) || 0) + 1);
     for (const t of new Set(shownTags(r).map(norm))) if (t) tc.set(t, (tc.get(t) || 0) + 1);
   }
   // forget filters for things that have gone
-  for (const f of [...recFilter]) if (f[0] === 'b' ? !bc : !(f[0] === 'k' ? kc : tc).has(f.slice(2))) recFilter.delete(f);
+  for (const f of [...recFilter]) if (f[0] === 'b' ? !bc : f[0] === 'o' ? !oc : !(f[0] === 'k' ? kc : tc).has(f.slice(2))) recFilter.delete(f);
   const chip = (key, label, n) => `<button class="lchip${recFilter.has(key) ? ' on' : ''}" data-rf="${esc(key)}" aria-pressed="${recFilter.has(key)}">${esc(label)}<span class="n">${n}</span></button>`;
   const kinds = KIND_ORDER.filter(k => kc.has(k)).map(k => chip('k:' + k, KIND[k].name, kc.get(k)));
   if (bc) kinds.push(chip('b:budget', 'Budget', bc));
+  if (oc) kinds.unshift(chip('o:own', 'Our recipes', oc));
   const tags = [...tc].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t, n]) => chip('t:' + t, tagLabel(t), n));
   const bar = $('recFilters'), x = bar.scrollLeft;
   bar.hidden = S.recipes.length < 2 || kinds.length + tags.length < 2;
@@ -2509,9 +2515,9 @@ function renderRecipes() {
     g.innerHTML = `<div class="card empty" style="grid-column:1/-1">
       <div class="brandmark bigmark">${ico('book')}</div>
       <h2>Shop for recipes</h2>
-      <p>Add recipes from the library, or ask Claude for one as a Markdown file and import it here. Then add the ingredients you need to your list, scaled to however many you’re feeding.</p>
-      <ol class="steps"><li>Tap <b>Claude prompt</b> to copy a ready-made request, and paste it into Claude with the dish you want.</li><li>Download the <b>.md</b> file Claude gives you.</li><li>Tap <b>Import .md</b> and pick the file — or drop it on this page, or use <b>Paste</b>.</li></ol>
-      <div class="actions"><button class="btn solid" data-act="library">${ico('book')}Browse the recipe library</button><button class="btn" data-act="claude-prompt">${ico('sparkle')}Copy Claude prompt</button></div>
+      <p>Add recipes from the library, write down the quick meals you make yourselves, or ask Claude for one and import it. Then add what you need to your list in one go.</p>
+      <ol class="steps"><li>Tap <b>Import → Ask Claude for a recipe</b> to copy a ready-made request, and paste it into Claude with the dish you want.</li><li>Download the <b>.md</b> file Claude gives you.</li><li>Tap <b>Import → Import a .md file</b> and pick it — or drop it on this page, or paste it.</li></ol>
+      <div class="actions"><button class="btn solid" data-act="library">${ico('book')}Browse the recipe library</button><button class="btn" data-act="new-recipe">${ico('plus')}Write your own</button></div>
     </div>`;
     return;
   }
@@ -2519,10 +2525,10 @@ function renderRecipes() {
   const list = S.recipes.filter(r => passesFilter(r) && (!words.length || words.every(w => norm([r.title, r.tags.join(' '), recipeKinds(r).map(k => KIND[k].name).join(' '), isBudget(r) ? 'budget' : '', r.ingredients.map(i => i.name).join(' ')].join(' ')).includes(w))));
   renderRecInfo(list.length, q);
   g.innerHTML = list.map(r => {
-    const ks = recipeKinds(r), tags = shownTags(r), cheap = isBudget(r);
+    const ks = recipeKinds(r), tags = shownTags(r), cheap = isBudget(r), own = !!r.own;
     return `<div class="card cont" data-rid="${r.id}">
       <div class="cont-h"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><div><b>${esc(r.title)}</b><small>${esc(recipeMeta(r))}</small></div></div>
-      ${ks.length || tags.length || cheap ? `<div class="tags">${ks.map(kindFilterBadge).join('')}${cheap ? budgetFilterBadge() : ''}${tags.map(tagFilterBadge).join('')}</div>` : ''}
+      ${ks.length || tags.length || cheap || own ? `<div class="tags">${own ? ownFilterBadge() : ''}${ks.map(kindFilterBadge).join('')}${cheap ? budgetFilterBadge() : ''}${tags.map(tagFilterBadge).join('')}</div>` : ''}
       <p class="prev">${esc(r.ingredients.map(i => i.name).join(', ')) || '<span class="muted">No ingredients found</span>'}</p>
       <div class="actions"><button class="btn solid" data-r="shop"${r.ingredients.length ? '' : ' disabled'}>${ico('basket')}Shop for it</button><button class="btn" data-r="open">Open</button></div>
     </div>`;
@@ -2535,6 +2541,8 @@ $('v-recipes').addEventListener('click', e => {
     if (a.dataset.act === 'claude-prompt') return claudePromptSheet();
     if (a.dataset.act === 'paste-recipe') return pasteRecipe();
     if (a.dataset.act === 'library') return recipeLibrary();
+    if (a.dataset.act === 'new-recipe') return editOwnRecipe(null);
+    if (a.dataset.act === 'import-menu') return importMenu();
   }
   const m = e.target.closest('[data-match]');
   if (m) { recMatch = m.dataset.match; saveRecFilter(); return renderRecipes(); }
@@ -2584,6 +2592,9 @@ function importTexts(texts) {
 }
 // Ready-made recipes that come with the app (public/recipes, listed in index.json)
 async function recipeLibrary() {
+  // show something straight away: there are a lot of files to fetch on a slow connection
+  openSheet({ title: 'Recipe library', wide: true, body: '<p class="muted" style="margin:6px 0 14px">Loading recipes…</p>' });
+  const loading = $('sheetBody');
   let lib;
   try {
     const res = await fetch('recipes/index.json', { cache: 'no-cache' });
@@ -2594,7 +2605,12 @@ async function recipeLibrary() {
       const text = await r.text();
       return { name, text, r: parseRecipe(text, name) };
     }))).filter(x => x && x.r.ingredients.length);
-  } catch { return toast('Couldn’t open the recipe library — check you’re online', { err: true }); }
+  } catch {
+    if ($('sheetBody') === loading && !$('sheet').hidden) closeSheet();
+    return toast('Couldn’t open the recipe library — check you’re online', { err: true });
+  }
+  // closed (or something else opened) while it was loading
+  if ($('sheetBody') !== loading || $('sheet').hidden) return;
   const have = new Set(S.recipes.map(r => norm(r.title)));
   // grouped by what's in them: chicken, beef… vegetarian, then anything else
   const group = x => { const ks = recipeKinds(x.r); const i = KIND_ORDER.findIndex(k => ks.includes(k)); return i < 0 ? KIND_ORDER.length : i; };
@@ -2616,6 +2632,94 @@ async function recipeLibrary() {
         closeSheet();
         // (each one goes to the top, so add them backwards to keep the library's order)
         importTexts(picked.reverse().map(({ text, name }) => ({ text, name })));
+      };
+    },
+  });
+}
+function importMenu() {
+  openSheet({
+    title: 'Import a recipe',
+    body: `<div class="menu">
+      <button data-im="file">${ico('upload')}<span>Import a .md file<small>A recipe file from Claude or anywhere else. You can also drop files on this page.</small></span></button>
+      <button data-im="paste">${ico('paste')}<span>Paste a recipe<small>Paste the Markdown text of a recipe</small></span></button>
+      <button data-im="claude">${ico('sparkle')}<span>Ask Claude for a recipe<small>Copies a ready-made request for Claude</small></span></button>
+    </div>`,
+    mount: body => body.querySelector('.menu').onclick = e => {
+      const b = e.target.closest('[data-im]');
+      if (!b) return;
+      if (b.dataset.im === 'file') { closeSheet(); return $('mdFile').click(); }
+      if (b.dataset.im === 'paste') return pasteRecipe();
+      claudePromptSheet();
+    },
+  });
+}
+/* ----- your own recipes: a name, what to buy and a few notes ----- */
+// Ingredients don't need amounts. They're kept as Markdown like any other recipe,
+// so they shop, plan, sync and download the same way.
+const ingLine = i => [i.qty, i.name].filter(Boolean).join(' ') + (i.note ? ', ' + i.note : '');
+function ownRecipeMd(d) {
+  const head = [`# ${d.title}`, d.time && `Time: ${d.time}`, d.tags && `Tags: ${d.tags}`].filter(Boolean);
+  // (a line starting with # would start a new section)
+  const desc = d.desc.replace(/^\s*#+\s*/gm, '');
+  return [...head, '', ...(desc ? [desc, ''] : []), '## Ingredients', ...d.items.map(t => '- ' + t), ''].join('\n');
+}
+function editOwnRecipe(r) {
+  const d = r ? { title: r.title, time: r.time, tags: r.tags.join(', '), desc: r.intro, items: r.ingredients.map(ingLine) }
+    : { title: '', time: '', tags: '', desc: '', items: [] };
+  const rowsHtml = () => d.items.map((t, k) => `<div class="erow one" data-k="${k}">
+      <input class="input" value="${esc(t)}" aria-label="Ingredient">
+      <button class="tact del" data-rm title="Remove" aria-label="Remove">${ico('x')}</button></div>`).join('')
+    || '<p class="muted" style="margin:6px 0">Nothing yet. Add what you buy for it below.</p>';
+  openSheet({
+    title: r ? 'Edit your recipe' : 'Your own recipe', wide: true,
+    body: `<div class="field" style="margin-top:6px"><label for="orName">Name</label><input class="input" id="orName" value="${esc(d.title)}" placeholder="e.g. Pizza night, Chicken burgers"${r ? '' : ' autofocus'}></div>
+      <div class="sec"><span class="eyebrow">What to buy</span></div>
+      <div id="orRows">${rowsHtml()}</div>
+      <form id="orAdd" class="addrow" style="margin-top:10px" autocomplete="off">
+        <div class="sgwrap"><input class="input" id="orAddIn" placeholder="Add an ingredient, e.g. pizza bases" aria-label="Add an ingredient"><div class="suggest" id="orSug" hidden></div></div>
+        <button class="btn" type="submit" aria-label="Add">${ico('plus')}</button>
+      </form>
+      <p class="note">No amounts needed. Add several at once with commas. When you shop for it, these go on your list.</p>
+      <div class="field" style="margin-top:16px"><label for="orDesc">How we make it (optional)</label>
+        <textarea class="input" id="orDesc" placeholder="e.g. Two stone-baked bases, extra cheese for the kids. 12 minutes at 200°C." style="min-height:110px;font-family:var(--ui);font-size:15px">${esc(d.desc)}</textarea></div>
+      <div class="fgrid" style="margin-top:14px">
+        <div class="field"><label for="orTime">Time (optional)</label><input class="input" id="orTime" value="${esc(d.time)}" placeholder="e.g. 20 min"></div>
+        <div class="field"><label for="orTags">Tags (optional)</label><input class="input" id="orTags" value="${esc(d.tags)}" placeholder="e.g. quick, family"></div>
+      </div>`,
+    foot: `${r ? `<button class="btn danger" id="orDel">${ico('trash')}Delete</button>` : ''}<div class="actions"><button class="btn" data-close>Cancel</button><button class="btn solid" id="orSave">Save recipe</button></div>`,
+    mount: () => {
+      const rowsEl = $('orRows');
+      const redraw = () => { rowsEl.innerHTML = rowsHtml(); };
+      const keyOf = t => mkey(parseIngredient(t).name);
+      rowsEl.addEventListener('input', e => { const row = e.target.closest('[data-k]'); if (row) d.items[+row.dataset.k] = e.target.value; });
+      rowsEl.addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b) { d.items.splice(+b.closest('[data-k]').dataset.k, 1); redraw(); } });
+      const addLines = list => {
+        for (const t of list.map(capFirst).filter(Boolean)) if (!d.items.some(x => keyOf(x) === keyOf(t))) d.items.push(t);
+        $('orAddIn').value = '';
+        redraw();
+      };
+      $('orAdd').onsubmit = e => { e.preventDefault(); addLines($('orAddIn').value.split(/\s*[,;\n]\s*/)); $('orAddIn').focus(); };
+      attachSuggest($('orAddIn'), $('orSug'), {
+        onList: () => new Set(d.items.map(keyOf)),
+        onPick: (o, typed, before) => { addLines([...before, o.c.name]); $('orAddIn').focus(); },
+      });
+      if ($('orDel')) $('orDel').onclick = () => { closeSheet(); withUndo(`Deleted ${r.title}`, () => { S.recipes = S.recipes.filter(x => x.id !== r.id); }); };
+      $('orSave').onclick = () => {
+        const pending = $('orAddIn').value.trim();
+        if (pending) addLines(pending.split(/\s*[,;\n]\s*/));
+        d.title = capFirst($('orName').value);
+        if (!d.title) { toast('Give it a name', { err: true }); return $('orName').focus(); }
+        if (S.recipes.some(x => x !== r && norm(x.title) === norm(d.title))) { toast(`You’ve already got a recipe called “${d.title}”`, { err: true }); return $('orName').focus(); }
+        d.time = $('orTime').value.trim();
+        d.tags = $('orTags').value.split(',').map(t => t.trim()).filter(Boolean).join(', ');
+        d.desc = $('orDesc').value.trim();
+        d.items = d.items.map(t => t.trim()).filter(Boolean);
+        const parsed = parseRecipe(ownRecipeMd(d), '');
+        if (r) Object.assign(r, parsed, { id: r.id, added: r.added, own: true });
+        else S.recipes.unshift({ ...parsed, own: true });
+        save(); closeSheet();
+        if (view !== 'recipes') setView('recipes'); else render();
+        toast(r ? 'Recipe saved' : `“${d.title}” added to your recipes`);
       };
     },
   });
@@ -2669,7 +2773,7 @@ function openRecipe(r, o = {}) {
     });
     return out || '<p class="muted">No ingredients found. Check the file has an <code>## Ingredients</code> heading with a bullet list under it.</p>';
   };
-  const scaler = r.serves
+  const scaler = !r.ingredients.some(i => i.num != null) ? '' : r.serves
     ? `<span class="flabel">Serves</span><span class="scaler"><button data-sc="-1" aria-label="Fewer">−</button><b id="rsN">${fmtNum(serves)}</b><button data-sc="1" aria-label="More">+</button></span>`
     : `<span class="flabel">Batch</span><span class="scaler"><button data-sc="-1" aria-label="Smaller">−</button><b id="rsN">×${fmtNum(serves)}</b><button data-sc="1" aria-label="Bigger">+</button></span>`;
   const plan = meal
@@ -2678,7 +2782,7 @@ function openRecipe(r, o = {}) {
   openSheet({
     title: r.title, wide: true,
     body: `${replace ? `<div class="banner" style="margin-bottom:12px"><div class="bico">${ico('repeat')}</div><p><b>Instead of ${esc(mealTitle(replace))}</b>${o.unshop ? 'Its ingredients come off your list.' : 'Anything already on your list for it stays there.'}</p></div>` : ''}
-      <div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, ...recipeKinds(r).map(k => `<button class="badge kind" style="--c:${KIND[k].color}" data-rtag="k:${k}" title="Show ${esc(KIND[k].name.toLowerCase())} recipes">${esc(KIND[k].name)}</button>`), isBudget(r) && `<button class="badge open" data-rtag="b:budget" title="Show recipes about ${gbp(BUDGET)} a serving or less">Budget</button>`, ...shownTags(r).map(t => `<button class="badge plain" data-rtag="t:${esc(norm(t))}" title="Show recipes tagged ${esc(t)}">${esc(t)}</button>`)].filter(Boolean).join('')}</div>
+      <div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, r.own && '<button class="badge info" data-rtag="o:own" title="Show your own recipes">Our recipe</button>', ...recipeKinds(r).map(k => `<button class="badge kind" style="--c:${KIND[k].color}" data-rtag="k:${k}" title="Show ${esc(KIND[k].name.toLowerCase())} recipes">${esc(KIND[k].name)}</button>`), isBudget(r) && `<button class="badge open" data-rtag="b:budget" title="Show recipes about ${gbp(BUDGET)} a serving or less">Budget</button>`, ...shownTags(r).map(t => `<button class="badge plain" data-rtag="t:${esc(norm(t))}" title="Show recipes tagged ${esc(t)}">${esc(t)}</button>`)].filter(Boolean).join('')}</div>
       ${!shopOnly && r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
       ${plan}
       <div class="sec"><span class="eyebrow">Ingredients</span></div>
@@ -2725,7 +2829,7 @@ function openRecipe(r, o = {}) {
         $('recSearch').value = '';
         if (view === 'recipes') { renderRecipes(); window.scrollTo(0, 0); } else setView('recipes');
       });
-      if ($('rEdit')) $('rEdit').onclick = () => editRecipeMd(r);
+      if ($('rEdit')) $('rEdit').onclick = () => r.own ? editOwnRecipe(r) : editRecipeMd(r);
       if ($('rDl')) $('rDl').onclick = () => download(slug(r.title) + '.md', r.md, 'text/markdown');
       if ($('rDel')) $('rDel').onclick = () => { closeSheet(); withUndo(`Deleted ${r.title}`, () => { S.recipes = S.recipes.filter(x => x.id !== r.id); }); };
       if ($('rAdd')) $('rAdd').onclick = () => {
