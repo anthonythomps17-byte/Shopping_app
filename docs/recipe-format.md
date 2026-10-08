@@ -1,6 +1,6 @@
 # Recipe file format
 
-The app imports recipes as Markdown (`.md`) files. The easiest way to get one is to tap **Claude prompt** on the Recipes page, paste the prompt into Claude, and swap `[DISH]` for what you want to cook.
+The app imports recipes as Markdown (`.md`) files. The easiest way to get one is to tap **Import → Ask Claude for a recipe** on the Recipes page, paste the prompt into Claude, and swap `[DISH]` for what you want to cook.
 
 ## Layout
 
