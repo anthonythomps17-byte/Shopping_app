@@ -374,6 +374,34 @@ button.badge:hover{box-shadow:inset 0 0 0 1px currentColor}
 .meal .done-ico{width:22px;height:22px;border-radius:50%;background:var(--success);color:#fff;display:grid;place-items:center;flex:none}
 .meal .done-ico svg{width:12px;height:12px}
 .day .addmeal{align-self:flex-start;margin:4px 0 0 6px}
+/* Today, at the top of the meal plan and the list */
+.thero{padding:20px 22px}
+.thero-in{position:relative;z-index:1;display:flex;flex-direction:column;gap:10px}
+.tmeal{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:none;border-radius:14px;background:rgba(255,255,255,.17);color:#fff;text-align:left}
+.tmeal:hover{background:rgba(255,255,255,.26)}
+.tmeal .lbl{flex:1;min-width:0}
+.tmeal b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.tmeal small{display:block;font-size:12.5px;font-weight:650;opacity:.88;margin-top:3px}
+.tmeal.cooked b{opacity:.75}
+.tmeal svg{width:18px;height:18px;flex:none}
+.tmeal .done-ico{width:24px;height:24px;border-radius:50%;background:#fff;color:var(--success);display:grid;place-items:center;flex:none}
+.tmeal .done-ico svg{width:13px;height:13px}
+.tnone{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.tnext{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;font-size:13px;font-weight:650;color:rgba(255,255,255,.88)}
+.tnext button{background:none;border:none;padding:0;color:#fff;font-weight:750;font-size:13px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.5)}
+.thero .btn.white{align-self:flex-start}
+.todaybar{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;text-align:left;color:var(--text);font:inherit;cursor:pointer}
+.todaybar[hidden]{display:none}
+.todaybar .tic{width:38px;height:38px;border-radius:11px;background:var(--brand-soft);color:var(--brand-ink);display:grid;place-items:center;flex:none}
+.todaybar .tic svg{width:19px;height:19px}
+.todaybar .lbl{flex:1;min-width:0;font-weight:750;font-size:15px;line-height:1.3}
+.todaybar .lbl small{display:block;color:var(--muted);font-size:12px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todaybar .lbl .eyebrow{display:block;color:var(--brand-ink);margin-bottom:2px}
+.todaybar > svg{width:18px;height:18px;color:var(--muted);flex:none}
+.pastbar{display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;font:inherit;font-size:13px;font-weight:700;color:var(--text-2);text-align:left;cursor:pointer}
+.pastbar small{color:var(--muted);font-weight:650;font-size:12px}
+.pastbar svg{width:16px;height:16px;margin-left:auto;color:var(--muted);transform:rotate(90deg)}
+.pastbar[aria-expanded="true"] svg{transform:rotate(-90deg)}
 .ings{display:flex;flex-direction:column}
 .ing{display:flex;align-items:baseline;gap:12px;padding:8px 4px;border-bottom:1px solid var(--surface-3);font-size:14px}
 .ing:last-child{border-bottom:none}
@@ -612,6 +640,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
       <section class="view on" id="v-lists">
         <div class="listbar" id="listBar"></div>
         <div class="stack">
+          <button class="card todaybar" id="todayBar" hidden></button>
           <div class="hero" id="listHero"></div>
           <div class="card addcard">
             <form class="addrow" id="addForm" autocomplete="off">
@@ -644,6 +673,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
       <!-- ============ MEAL PLAN ============ -->
       <section class="view" id="v-plan">
         <div class="stack">
+          <div id="planToday"></div>
           <div class="toolbar weekbar">
             <button class="iconbtn" data-act="week-prev" title="Previous week" aria-label="Previous week"><svg><use href="#i-chevl"/></svg></button>
             <div class="weeklbl"><b id="weekTitle"></b><small id="weekSub"></small></div>
@@ -651,8 +681,8 @@ details.trip[open] summary::after{transform:rotate(90deg)}
             <span class="grow"></span>
             <button class="btn sm" data-act="week-today" id="weekToday">This week</button>
           </div>
-          <div id="planIdeas"></div>
           <div class="days" id="planDays"></div>
+          <div id="planIdeas"></div>
         </div>
       </section>
 
@@ -1553,6 +1583,7 @@ function renderLists() {
     const n = x.items.filter(i => !i.done).length;
     return `<button class="lchip${x.id === l.id ? ' on' : ''}" data-list="${x.id}">${esc(x.name)}${n ? `<span class="n">${n}</span>` : ''}</button>`;
   }).join('') + `<button class="lchip add" data-act="new-list">${ico('plus')}New list</button>`;
+  renderTodayBar();
   renderHero();
   document.querySelectorAll('#groupSeg button').forEach(b => b.classList.toggle('on', b.dataset.group === S.settings.groupBy));
   $('tickAllBtn').hidden = l.items.filter(i => !i.done).length < 2;
@@ -1560,6 +1591,19 @@ function renderLists() {
   $('wakeBtn').classList.toggle('on', wantWake);
   renderGroups();
 }
+// What's planned for today and tomorrow, so you don't have to go looking
+const mealsOn = d => S.meals.filter(m => m.date === d);
+const mealNames = ms => ms.map(mealTitle).join(', ');
+function renderTodayBar() {
+  const today = todayIso(), now = mealsOn(today), next = mealsOn(addDays(today, 1));
+  const bar = $('todayBar');
+  bar.hidden = !now.length && !next.length;
+  if (bar.hidden) return;
+  bar.innerHTML = `<span class="tic">${ico('calendar')}</span>
+    <span class="lbl"><span class="eyebrow">Today</span>${now.length ? esc(mealNames(now)) : 'Nothing planned yet'}${next.length ? `<small>Tomorrow: ${esc(mealNames(next))}</small>` : ''}</span>${ico('chevr')}`;
+  bar.setAttribute('aria-label', `Meal plan. Today: ${now.length ? mealNames(now) : 'nothing planned'}${next.length ? `. Tomorrow: ${mealNames(next)}` : ''}`);
+}
+$('todayBar').onclick = () => { planWeek = mondayOf(todayIso()); setView('plan'); };
 function renderHero() {
   const l = cur(), all = l.items, done = all.filter(i => i.done), left = all.length - done.length;
   const cost = itemsCost(all), inBasket = itemsCost(done);
@@ -2168,15 +2212,33 @@ function renderPlan() {
   $('weekTitle').textContent = rel;
   $('weekSub').textContent = `${dayLabel(planWeek, { day: 'numeric', month: 'short' })} – ${dayLabel(end, { day: 'numeric', month: 'short' })} · ${inWeek.length ? plural(inWeek.length, 'meal') : 'nothing planned'}`;
   $('weekToday').hidden = planWeek === thisWeek;
+  renderToday(planWeek === thisWeek);
   renderIdeas();
-  $('planDays').innerHTML = Array.from({ length: 7 }, (_, k) => {
-    const d = addDays(planWeek, k), meals = inWeek.filter(m => m.date === d);
+  // Earlier days this week fold away, so today comes first
+  const days = Array.from({ length: 7 }, (_, k) => addDays(planWeek, k));
+  const past = planWeek === thisWeek ? days.filter(d => d < today) : [];
+  const pastMeals = inWeek.filter(m => m.date < today).length;
+  const pastLbl = past.length && dayLabel(past[0], { weekday: 'long' }) + (past.length > 1 ? ' – ' + dayLabel(past[past.length - 1], { weekday: 'long' }) : '');
+  const pastBar = past.length ? `<button class="card pastbar" data-act="toggle-past" aria-expanded="${showPast}">${showPast ? 'Hide earlier days' : `Earlier this week<small>${esc(pastLbl)} · ${pastMeals ? plural(pastMeals, 'meal') : 'nothing planned'}</small>`}${ico('chevr')}</button>` : '';
+  $('planDays').innerHTML = pastBar + days.filter(d => showPast || !past.includes(d)).map(d => {
+    const meals = inWeek.filter(m => m.date === d);
     return `<div class="card day${d === today ? ' today' : d < today ? ' past' : ''}" data-date="${d}">
       <div class="day-h"><b>${esc(dayLabel(d, { weekday: 'long' }))}</b><small>${esc(dayLabel(d, { day: 'numeric', month: 'short' }))}</small>${d === today ? '<span class="badge info">Today</span>' : ''}</div>
       ${meals.map(mealRow).join('')}
       <button class="linkbtn addmeal" data-act="add-meal">+ Add a meal</button>
     </div>`;
   }).join('');
+}
+let showPast = false;
+function renderToday(show) {
+  const today = todayIso(), now = mealsOn(today), next = mealsOn(addDays(today, 1));
+  if (!show) { $('planToday').innerHTML = ''; return; }
+  $('planToday').innerHTML = `<div class="hero thero" data-date="${today}"><div class="thero-in">
+    <div class="eyebrow">Today · ${esc(dayLabel(today, { weekday: 'long', day: 'numeric', month: 'short' }))}</div>
+    ${now.length ? now.map(m => `<button class="tmeal${m.cooked ? ' cooked' : ''}" data-mid="${m.id}"><span class="lbl"><b>${esc(mealTitle(m))}</b>${m.rid || m.cooked ? `<small>${m.cooked ? 'Cooked' : esc(mealMeta(m))}</small>` : ''}</span>${m.cooked ? `<span class="done-ico">${ico('check')}</span>` : ico('chevr')}</button>`).join('')
+      : `<div class="tnone">Nothing planned yet</div><button class="btn white sm" data-act="add-meal">${ico('plus')}Plan today’s meal</button>`}
+    <div class="tnext"><span>Tomorrow:</span>${next.length ? next.map(m => `<button data-mid="${m.id}">${esc(mealTitle(m))}</button>`).join('') : '<span>nothing planned</span>'}</div>
+  </div></div>`;
 }
 $('v-plan').addEventListener('click', e => {
   const a = e.target.closest('[data-act]');
@@ -2186,6 +2248,7 @@ $('v-plan').addEventListener('click', e => {
     if (a.dataset.act === 'week-today') { planWeek = mondayOf(todayIso()); return renderPlan(); }
     if (a.dataset.act === 'add-meal') return chooseMeal(a.closest('[data-date]').dataset.date);
     if (a.dataset.act === 'leftover-prompt') return leftoverPrompt();
+    if (a.dataset.act === 'toggle-past') { showPast = !showPast; return renderPlan(); }
   }
   const idea = e.target.closest('[data-idea]');
   if (idea) { const r = S.recipes.find(x => x.id === idea.dataset.idea); return r && openRecipe(r, { shopOnly: true, date: nextFreeDay() }); }
