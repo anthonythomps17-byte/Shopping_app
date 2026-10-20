@@ -335,6 +335,20 @@ select.input{appearance:auto}
 .cont-h div{min-width:0}
 .cont-h b{display:block;font-size:15.5px;font-weight:750;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cont-h small{color:var(--muted);font-size:12px;font-weight:650}
+/* favourites */
+.favbtn{width:38px;height:38px;margin:-6px -6px -6px auto;border:none;border-radius:11px;background:none;color:var(--muted-2);display:grid;place-items:center;flex:none;cursor:pointer}
+.favbtn:hover{background:var(--surface-2)}
+.favbtn svg{width:21px;height:21px;fill:none;stroke:currentColor}
+.favbtn.on{color:#f0a020}
+.favbtn.on svg{fill:currentColor}
+.favtog{display:inline-flex;align-items:center;gap:6px;padding:3px 11px 3px 9px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-2);font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.favtog svg{width:15px;height:15px;fill:none;stroke:currentColor}
+.favtog.on{border-color:transparent;background:color-mix(in srgb,#f0a020 20%,var(--surface));color:var(--text)}
+.favtog.on svg{fill:#f0a020;stroke:#f0a020}
+.fstar{width:13px;height:13px;fill:#f0a020;stroke:#f0a020;vertical-align:-1px;margin-left:5px}
+.lchip .fstar{margin:0 0 0 -2px;width:14px;height:14px}
+.rpsearch{position:sticky;top:-2px;z-index:2;background:var(--surface);padding:2px 0 8px}
+.rpnone{margin:10px 2px}
 .prev{margin:0 0 14px;color:var(--text-2);font-size:13px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card.cont .actions{margin-top:auto}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
@@ -596,6 +610,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
     <symbol id="i-screen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
     <symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="m7 22-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round"><path d="M12 3.6l2.6 5.3 5.8.85-4.2 4.1 1 5.8L12 16.9l-5.2 2.75 1-5.8-4.2-4.1 5.8-.85z"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7.5 14h2M11 14h2M14.5 14h2M7.5 17.5h2M11 17.5h2"/></symbol>
     <symbol id="i-chevl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></symbol>
     <symbol id="i-chevr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></symbol>
@@ -2261,7 +2276,7 @@ $('v-plan').addEventListener('click', e => {
 // Pick a meal for a day, or (with `replace`) something to have instead of a planned one
 function chooseMeal(date, replace) {
   const ideas = mealIdeas(mondayOf(date), replace);
-  const recipes = [...ideas.recs.map(x => x.r), ...S.recipes.filter(r => !ideas.byId.has(r.id) && !(replace && r.id === replace.rid))];
+  const first = ideas.recs.slice(0, 3).map(x => x.r);
   const off = replace ? unshop(replace, true) : [];
   const day = dayLabel(date, { weekday: 'long', day: 'numeric', month: 'short' });
   const why = r => {
@@ -2273,13 +2288,18 @@ function chooseMeal(date, replace) {
     title: replace ? `Change ${mealTitle(replace)}` : day,
     body: `${replace ? `<p style="margin:4px 0 8px">Pick something else for ${esc(day)}.</p>
         ${off.length ? `<label class="chk"><input type="checkbox" id="cmOff" checked><span class="nm">Take its ingredients off your list<small>${esc(off.join(', '))}</small></span></label>` : ''}` : ''}
-      ${recipes.length ? `<div class="sec"><span class="eyebrow">Pick a recipe</span></div>` + recipes.map(r => { const x = ideas.byId.get(r.id); return `<button class="pickrow" data-rid="${r.id}"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><span class="lbl">${esc(r.title)}<small>${esc(why(r))}</small></span>${x && x.uses.length ? '<span class="badge done">Less waste</span>' : ''}</button>`; }).join('')
+      ${S.recipes.length ? recipePickerHtml()
         : `<p style="margin-top:4px">You haven’t imported any recipes yet. Import some on the Recipes page, or just type a meal below.</p>`}
       <div class="sec"><span class="eyebrow">Or just write it down</span></div>
       <form id="fmForm" class="addrow" autocomplete="off"><input class="input" id="fmIn" placeholder="e.g. Leftovers, Takeaway, Out for dinner" aria-label="Meal"><button class="btn" type="submit">${ico('plus')}</button></form>`,
     mount: b => {
+      if (S.recipes.length) wireRecipePicker({ first, firstLabel: 'Ideas · less waste', why, none: q => `<button class="btn sm" data-note>${ico('plus')}Add “${esc(q)}” to the plan</button>`, skip: replace ? replace.rid : '',
+        badge: r => { const x = ideas.byId.get(r.id); return x && x.uses.length ? '<span class="badge done">Less waste</span>' : ''; } });
       const offOld = () => !!($('cmOff') && $('cmOff').checked);
-      b.onclick = e => { const r = e.target.closest('[data-rid]'); if (r) openRecipe(S.recipes.find(x => x.id === r.dataset.rid), { shopOnly: true, date, replace, unshop: offOld() }); };
+      b.onclick = e => {
+        if (e.target.closest('[data-note]')) { $('fmIn').value = $('rpQ').value.trim(); return $('fmForm').requestSubmit(); }
+        const r = e.target.closest('[data-rid]'); if (r) openRecipe(S.recipes.find(x => x.id === r.dataset.rid), { shopOnly: true, date, replace, unshop: offOld() });
+      };
       $('fmForm').onsubmit = e => {
         e.preventDefault();
         const t = capFirst($('fmIn').value);
@@ -2363,7 +2383,7 @@ function openMeal(m) {
   };
   openSheet({
     title: mealTitle(m), wide: true,
-    body: `<div class="rmeta" style="margin:0 0 10px"><span class="badge info">${esc(dayLabel(m.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</span>${r ? `<span>${esc(mealMeta(m))}</span>` : ''}${m.cooked ? '<span class="badge done">Cooked</span>' : ''}</div>
+    body: `<div class="rmeta" style="margin:0 0 10px"><span class="badge info">${esc(dayLabel(m.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</span>${r ? `<span>${esc(mealMeta(m))}</span>${favTogHtml(r)}` : ''}${m.cooked ? '<span class="badge done">Cooked</span>' : ''}</div>
       <label class="plansel">${ico('calendar')}<span class="flabel">Day</span>${planSelect('mDay', m.date, false)}</label>
       <div class="actions" style="margin:10px 0 4px"><button class="btn sm" id="mSwap">${ico('repeat')}Change meal</button>${r ? `<button class="btn sm" id="mShop">${ico('basket')}Shop for it again</button>` : ''}<button class="btn sm danger" id="mDel">${ico('trash')}Remove from plan</button></div>
       ${r && r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
@@ -2374,6 +2394,7 @@ function openMeal(m) {
     mount: () => {
       $('mDay').onchange = () => { m.date = $('mDay').value; planWeek = mondayOf(m.date); save(); render(); openMeal(m); toast(`Moved to ${dayLabel(m.date, { weekday: 'long' })}`); };
       $('mCook').onclick = () => { m.cooked = !m.cooked; save(); closeSheet(); render(); };
+      if (r) favTog($('rFav'), r);
       $('mSwap').onclick = () => chooseMeal(m.date, m);
       $('mDel').onclick = () => removeMeal(m);
       if ($('mShop')) $('mShop').onclick = () => openRecipe(r, { shopOnly: true, meal: m });
@@ -2527,6 +2548,54 @@ const budgetFilterBadge = () => { const on = recFilter.has('b:budget'); return `
 const kindFilterBadge = id => { const on = recFilter.has('k:' + id); return `<button class="badge kind${on ? ' on' : ''}" style="--c:${KIND[id].color}" data-rf="k:${id}" aria-pressed="${on}" title="${on ? 'Stop filtering by' : 'Show only'} ${esc(KIND[id].name)}">${esc(KIND[id].name)}</button>`; };
 const tagFilterBadge = t => { const k = 't:' + norm(t), on = recFilter.has(k); return `<button class="badge plain${on ? ' on' : ''}" data-rf="${esc(k)}" aria-pressed="${on}" title="${on ? 'Stop filtering by' : 'Show only'} ${esc(t)}">${esc(t)}</button>`; };
 
+/* ----- favourites, and the meals you have most ----- */
+function planCounts() { const c = new Map(); for (const m of S.meals) if (m.rid) c.set(m.rid, (c.get(m.rid) || 0) + 1); return c; }
+// Favourites first, then the ones you plan most, then the rest as they were
+const byUse = (rs, counts = planCounts()) => rs.map((r, i) => [r, i])
+  .sort((a, b) => (!!b[0].fav - !!a[0].fav) || ((counts.get(b[0].id) || 0) - (counts.get(a[0].id) || 0)) || a[1] - b[1]).map(x => x[0]);
+const timesPlanned = n => n === 1 ? 'planned once' : n === 2 ? 'planned twice' : `planned ${n} times`;
+function toggleFav(r) {
+  if (r.fav) delete r.fav; else r.fav = true;
+  save(); render();
+  toast(r.fav ? `${r.title} added to favourites` : `${r.title} taken out of favourites`);
+}
+const favBtn = r => `<button class="favbtn${r.fav ? ' on' : ''}" data-fav="${r.id}" aria-pressed="${!!r.fav}" title="${r.fav ? 'Take out of favourites' : 'Add to favourites'}" aria-label="${r.fav ? 'Take' : 'Add'} ${esc(r.title)} ${r.fav ? 'out of' : 'to'} favourites">${ico('star')}</button>`;
+const favTogHtml = r => `<button class="favtog${r.fav ? ' on' : ''}" id="rFav" aria-pressed="${!!r.fav}">${ico('star')}${r.fav ? 'Favourite' : 'Add to favourites'}</button>`;
+function favTog(b, r) { b.outerHTML = favTogHtml(r); $('rFav').onclick = () => { toggleFav(r); favTog($('rFav'), r); }; }
+const favMark = r => r.fav ? '<svg class="fstar" aria-label="Favourite"><use href="#i-star"/></svg>' : '';
+// What a search looks through: the name, tags, type, ingredients
+const recipeWords = r => norm([r.title, r.tags.join(' '), recipeKinds(r).map(k => KIND[k].name).join(' '), isBudget(r) ? 'budget' : '', r.fav ? 'favourite favorite' : '', r.ingredients.map(i => i.name).join(' ')].join(' '));
+const searchWords = q => norm(q).split(' ').filter(Boolean);
+const matchesSearch = (r, words) => !words.length || words.every(w => recipeWords(r).includes(w));
+// The recipe list in the "pick a meal" and "shop for a recipe" sheets: a search box,
+// then ideas (if any), favourites, the ones you have a lot, and everything else A–Z
+function recipePickerHtml() {
+  return `<div class="rpsearch"><div class="search">${ico('search')}<input class="input" id="rpQ" type="search" placeholder="Search — try “chicken”, “quick” or “pasta”" aria-label="Search recipes" autocomplete="off" autofocus></div></div><div id="rpList"></div>`;
+}
+function wireRecipePicker({ first = [], firstLabel = '', why = recipeMeta, badge = () => '', none = '', skip = '' }) {
+  const all = () => S.recipes.filter(r => r.id !== skip);
+  const row = r => `<button class="pickrow" data-rid="${r.id}"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><span class="lbl">${esc(r.title)}${favMark(r)}<small>${esc(why(r))}</small></span>${badge(r)}</button>`;
+  const sec = (label, rs) => rs.length ? `<div class="sec"><span class="eyebrow">${esc(label)}</span></div>${rs.map(row).join('')}` : '';
+  const draw = () => {
+    const words = searchWords($('rpQ').value), counts = planCounts();
+    if (words.length) {
+      const hits = byUse(all().filter(r => matchesSearch(r, words)), counts);
+      $('rpList').innerHTML = hits.length ? sec(plural(hits.length, 'match', 'matches'), hits) : `<p class="muted rpnone">No recipes match “${esc($('rpQ').value.trim())}”.</p>${none ? none($('rpQ').value.trim()) : ''}`;
+      return;
+    }
+    const seen = new Set(first.map(r => r.id));
+    const favs = byUse(all().filter(r => r.fav && !seen.has(r.id)), counts);
+    favs.forEach(r => seen.add(r.id));
+    const often = all().filter(r => !seen.has(r.id) && (counts.get(r.id) || 0) >= 2).sort((a, b) => counts.get(b.id) - counts.get(a.id)).slice(0, 6);
+    often.forEach(r => seen.add(r.id));
+    const rest = all().filter(r => !seen.has(r.id)).sort((a, b) => a.title.localeCompare(b.title));
+    $('rpList').innerHTML = sec(firstLabel, first) + sec('Favourites', favs) + sec('You have these a lot', often)
+      + sec(first.length || favs.length || often.length ? 'All recipes, A–Z' : 'Recipes, A–Z', rest);
+  };
+  $('rpQ').addEventListener('input', draw);
+  draw();
+}
+
 // Which filters are on: "k:chicken" for a group, "t:dinner" for a tag. Kept on this phone.
 let recFilter = new Set(), recMatch = 'all';
 try { recFilter = new Set(JSON.parse(localStorage.getItem('shop_recfilter')) || []); recMatch = localStorage.getItem('shop_recmatch') === 'any' ? 'any' : 'all'; } catch {}
@@ -2537,7 +2606,7 @@ function saveRecFilter() { try { localStorage.setItem('shop_recfilter', JSON.str
 function passesFilter(r) {
   const ks = [...recFilter].filter(f => f[0] === 'k').map(f => f.slice(2)), ts = [...recFilter].filter(f => f[0] === 't').map(f => f.slice(2));
   const tags = r.tags.map(norm), hasTag = t => tags.includes(t);
-  return (!recFilter.has('o:own') || r.own) && (!recFilter.has('b:budget') || isBudget(r)) && (!ks.length || ks.some(k => recipeKinds(r).includes(k))) && (!ts.length || (recMatch === 'any' ? ts.some(hasTag) : ts.every(hasTag)));
+  return (!recFilter.has('f:fav') || r.fav) && (!recFilter.has('o:own') || r.own) && (!recFilter.has('b:budget') || isBudget(r)) && (!ks.length || ks.some(k => recipeKinds(r).includes(k))) && (!ts.length || (recMatch === 'any' ? ts.some(hasTag) : ts.every(hasTag)));
 }
 // "12 of 114 recipes · match all / any of the tags · Clear"
 function renderRecInfo(shown, q) {
@@ -2550,19 +2619,22 @@ function renderRecInfo(shown, q) {
 }
 function renderRecFilters() {
   const kc = new Map(), tc = new Map();
-  let bc = 0, oc = 0;
+  let bc = 0, oc = 0, fc = 0;
   for (const r of S.recipes) {
+    if (r.fav) fc++;
     if (isBudget(r)) bc++;
     if (r.own) oc++;
     for (const k of recipeKinds(r)) kc.set(k, (kc.get(k) || 0) + 1);
     for (const t of new Set(shownTags(r).map(norm))) if (t) tc.set(t, (tc.get(t) || 0) + 1);
   }
   // forget filters for things that have gone
-  for (const f of [...recFilter]) if (f[0] === 'b' ? !bc : f[0] === 'o' ? !oc : !(f[0] === 'k' ? kc : tc).has(f.slice(2))) recFilter.delete(f);
+  for (const f of [...recFilter]) if (f[0] === 'f' ? false : f[0] === 'b' ? !bc : f[0] === 'o' ? !oc : !(f[0] === 'k' ? kc : tc).has(f.slice(2))) recFilter.delete(f);
   const chip = (key, label, n) => `<button class="lchip${recFilter.has(key) ? ' on' : ''}" data-rf="${esc(key)}" aria-pressed="${recFilter.has(key)}">${esc(label)}<span class="n">${n}</span></button>`;
   const kinds = KIND_ORDER.filter(k => kc.has(k)).map(k => chip('k:' + k, KIND[k].name, kc.get(k)));
   if (bc) kinds.push(chip('b:budget', 'Budget', bc));
   if (oc) kinds.unshift(chip('o:own', 'Our recipes', oc));
+  // always there, so it's easy to find (it says how to add some when there aren't any)
+  kinds.unshift(`<button class="lchip${recFilter.has('f:fav') ? ' on' : ''}" data-rf="f:fav" aria-pressed="${recFilter.has('f:fav')}"><svg class="fstar"><use href="#i-star"/></svg>Favourites<span class="n">${fc}</span></button>`);
   const tags = [...tc].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t, n]) => chip('t:' + t, tagLabel(t), n));
   const bar = $('recFilters'), x = bar.scrollLeft;
   bar.hidden = S.recipes.length < 2 || kinds.length + tags.length < 2;
@@ -2584,13 +2656,17 @@ function renderRecipes() {
     </div>`;
     return;
   }
-  const words = q.split(' ').filter(Boolean);
-  const list = S.recipes.filter(r => passesFilter(r) && (!words.length || words.every(w => norm([r.title, r.tags.join(' '), recipeKinds(r).map(k => KIND[k].name).join(' '), isBudget(r) ? 'budget' : '', r.ingredients.map(i => i.name).join(' ')].join(' ')).includes(w))));
+  const words = searchWords(q), counts = planCounts();
+  const list = byUse(S.recipes.filter(r => passesFilter(r) && matchesSearch(r, words)), counts);
   renderRecInfo(list.length, q);
+  if (!list.length && recFilter.has('f:fav') && !S.recipes.some(r => r.fav)) {
+    g.innerHTML = `<div class="card empty" style="grid-column:1/-1"><h2>No favourites yet</h2><p>Tap the ${ico('star')} star on the recipes you have most, and they’ll be here — and at the top when you’re picking a meal.</p><div class="actions"><button class="btn" data-rf="">Show all recipes</button></div></div>`;
+    return;
+  }
   g.innerHTML = list.map(r => {
-    const ks = recipeKinds(r), tags = shownTags(r), cheap = isBudget(r), own = !!r.own;
+    const ks = recipeKinds(r), tags = shownTags(r), cheap = isBudget(r), own = !!r.own, n = counts.get(r.id);
     return `<div class="card cont" data-rid="${r.id}">
-      <div class="cont-h"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><div><b>${esc(r.title)}</b><small>${esc(recipeMeta(r))}</small></div></div>
+      <div class="cont-h"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><div><b>${esc(r.title)}</b><small>${esc(recipeMeta(r))}${n ? ` · ${timesPlanned(n)}` : ''}</small></div>${favBtn(r)}</div>
       ${ks.length || tags.length || cheap || own ? `<div class="tags">${own ? ownFilterBadge() : ''}${ks.map(kindFilterBadge).join('')}${cheap ? budgetFilterBadge() : ''}${tags.map(tagFilterBadge).join('')}</div>` : ''}
       <p class="prev">${esc(r.ingredients.map(i => i.name).join(', ')) || '<span class="muted">No ingredients found</span>'}</p>
       <div class="actions"><button class="btn solid" data-r="shop"${r.ingredients.length ? '' : ' disabled'}>${ico('basket')}Shop for it</button><button class="btn" data-r="open">Open</button></div>
@@ -2609,6 +2685,8 @@ $('v-recipes').addEventListener('click', e => {
   }
   const m = e.target.closest('[data-match]');
   if (m) { recMatch = m.dataset.match; saveRecFilter(); return renderRecipes(); }
+  const fv = e.target.closest('[data-fav]');
+  if (fv) return toggleFav(S.recipes.find(x => x.id === fv.dataset.fav));
   const f = e.target.closest('[data-rf]');
   if (f) {
     const k = f.dataset.rf;
@@ -2813,8 +2891,11 @@ function chooseRecipe() {
   }
   openSheet({
     title: 'Shop for a recipe',
-    body: S.recipes.map(r => `<button class="pickrow" data-rid="${r.id}"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><span class="lbl">${esc(r.title)}<small>${esc(recipeMeta(r))}</small></span></button>`).join(''),
-    mount: b => b.onclick = e => { const r = e.target.closest('[data-rid]'); if (r) openRecipe(S.recipes.find(x => x.id === r.dataset.rid), { shopOnly: true }); },
+    body: recipePickerHtml(),
+    mount: b => {
+      wireRecipePicker({});
+      b.onclick = e => { const r = e.target.closest('[data-rid]'); if (r) openRecipe(S.recipes.find(x => x.id === r.dataset.rid), { shopOnly: true }); };
+    },
   });
 }
 function scaledQty(i, f) { return f === 1 || i.num == null ? i.qty : buildQty(i.num * f, i.unit); }
@@ -2845,7 +2926,7 @@ function openRecipe(r, o = {}) {
   openSheet({
     title: r.title, wide: true,
     body: `${replace ? `<div class="banner" style="margin-bottom:12px"><div class="bico">${ico('repeat')}</div><p><b>Instead of ${esc(mealTitle(replace))}</b>${o.unshop ? 'Its ingredients come off your list.' : 'Anything already on your list for it stays there.'}</p></div>` : ''}
-      <div class="rmeta" style="margin:0 0 10px">${[r.time && `<span>${esc(r.time)}</span>`, r.own && '<button class="badge info" data-rtag="o:own" title="Show your own recipes">Our recipe</button>', ...recipeKinds(r).map(k => `<button class="badge kind" style="--c:${KIND[k].color}" data-rtag="k:${k}" title="Show ${esc(KIND[k].name.toLowerCase())} recipes">${esc(KIND[k].name)}</button>`), isBudget(r) && `<button class="badge open" data-rtag="b:budget" title="Show recipes about ${gbp(BUDGET)} a serving or less">Budget</button>`, ...shownTags(r).map(t => `<button class="badge plain" data-rtag="t:${esc(norm(t))}" title="Show recipes tagged ${esc(t)}">${esc(t)}</button>`)].filter(Boolean).join('')}</div>
+      <div class="rmeta" style="margin:0 0 10px">${[favTogHtml(r), r.time && `<span>${esc(r.time)}</span>`, r.own && '<button class="badge info" data-rtag="o:own" title="Show your own recipes">Our recipe</button>', ...recipeKinds(r).map(k => `<button class="badge kind" style="--c:${KIND[k].color}" data-rtag="k:${k}" title="Show ${esc(KIND[k].name.toLowerCase())} recipes">${esc(KIND[k].name)}</button>`), isBudget(r) && `<button class="badge open" data-rtag="b:budget" title="Show recipes about ${gbp(BUDGET)} a serving or less">Budget</button>`, ...shownTags(r).map(t => `<button class="badge plain" data-rtag="t:${esc(norm(t))}" title="Show recipes tagged ${esc(t)}">${esc(t)}</button>`)].filter(Boolean).join('')}</div>
       ${!shopOnly && r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
       ${plan}
       <div class="sec"><span class="eyebrow">Ingredients</span></div>
@@ -2863,6 +2944,7 @@ function openRecipe(r, o = {}) {
         $('rCost').hidden = !c;
         if (c) $('rCost').textContent = `What’s ticked comes to about ${gbp(c.shop)}${perServing(r, serves, c)}`;
       };
+      favTog($('rFav'), r);
       const recount = wirePicker(body, rows, $('rAdd'), 'Add', n => {
         showCost();
         const items = n ? plural(n, 'item') : '';
