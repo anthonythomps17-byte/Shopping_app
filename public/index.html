@@ -478,6 +478,9 @@ button.badge:hover{box-shadow:inset 0 0 0 1px currentColor}
 .row .lbl{font-size:14px;font-weight:650;min-width:0;flex:1}
 .row .lbl small{display:block;font-size:11.5px;color:var(--muted);font-weight:600}
 .row .val{font-family:var(--mono);font-weight:750;font-size:13px;white-space:nowrap}
+.meter{display:block;height:5px;max-width:200px;border-radius:3px;background:var(--surface-3);margin-top:6px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:3px;background:var(--success)}
+.meter.low i{background:var(--accent)}
 details.trip{border-bottom:1px solid var(--surface-3)}
 details.trip:last-child{border-bottom:none}
 details.trip summary{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer;list-style:none}
@@ -809,8 +812,14 @@ details.trip[open] summary::after{transform:rotate(90deg)}
             </div>
             <div class="card">
               <h3>Cupboard staples</h3>
-              <p class="note" style="margin:0 0 12px">Things you always have in. When you shop for a recipe these start unticked, so they don’t end up on your list. One per line.</p>
+              <p class="note" style="margin:0 0 12px">Things you always have in. When you shop for a recipe these start unticked, so they don’t end up on your list. Once you buy one, the app keeps count of how much is left (see <b>In the cupboard</b>) and puts it back on when it runs low. One per line.</p>
               <textarea class="input" id="staples" style="min-height:150px;font-family:var(--ui);font-size:14px"></textarea>
+              <label class="chk" style="margin-top:8px"><input type="checkbox" id="tubeGarlic"><span class="nm">Garlic purée from a tube, not cloves<small>Recipes that want garlic cloves add garlic purée instead, about a teaspoon a clove</small></span></label>
+            </div>
+            <div class="card">
+              <h3>In the cupboard <span class="sub" id="cupCount"></span></h3>
+              <p class="note" style="margin:0 0 6px">Spices, sauces, oils, tins, pasta, rice, frozen bits and your staples last more than one meal. When you buy one, it’s counted here. Each recipe you shop for uses some, and it stays off your list until there isn’t enough left.</p>
+              <div class="rows" id="cupRows"></div>
             </div>
           </div>
           <div class="stack">
@@ -900,7 +909,7 @@ const RULES = [
   ['personal', 'shampoo|conditioner|soap|toothpaste|toothbrush|deodorant|razors?|paracetamol|ibuprofen|plasters|shower gel|moisturi[sz]er|sun ?cream|vitamins|hand ?wash|cotton|mouthwash|floss|nappies|wipes|sanitary|tampons'],
   ['pets', 'parrot|budgie|bird ?seed|cat (food|litter|treats)|dog (food|treats|biscuits)|kitten|puppy|pets?\\b|litter|millet|cuttlefish|pellets|seed mix'],
   ['frozen', 'frozen|ice ?cream|ice lolly|ice cubes|fish fingers|oven chips|chips\\b|peas\\b|petits pois|hash browns'],
-  ['cupboard', 'fish sauce|oyster sauce|sweet chilli|gochujang|balsamic|gherkins?|cornichons|roasted (red )?peppers|ajvar|fennel seeds|corned beef|granola|muesli|jalape[nñ]o|horseradish|chutney|mint sauce|cranberry sauce|taco shells?|laksa|seasoning|bay lea(f|ves)|vinegar|ketchup|breadcrumbs|panko|bread flour|strong (white )?flour|egg noodles|coconut (milk|cream)|peanut butter|tinned|tin of|can of|canned|black pepper|peppercorns|chilli (flakes|powder)|curry (paste|powder)|tomato (pur[eé]e|paste)|chopped tomatoes|plum tomatoes|passata|stock|dried|ground |baked beans|kidney beans|black beans|butter beans|cannellini|chickpeas|lentils|sweetcorn|garlic (powder|granules)|ginger (paste|powder)|lemon juice|lime juice'],
+  ['cupboard', 'fish sauce|oyster sauce|sweet chilli|gochujang|balsamic|gherkins?|cornichons|roasted (red )?peppers|ajvar|fennel seeds|corned beef|granola|muesli|jalape[nñ]o|horseradish|chutney|mint sauce|cranberry sauce|taco shells?|laksa|seasoning|bay lea(f|ves)|vinegar|ketchup|breadcrumbs|panko|bread flour|strong (white )?flour|egg noodles|coconut (milk|cream)|peanut butter|tinned|tin of|can of|canned|black pepper|peppercorns|chilli (flakes|powder)|curry (paste|powder)|tomato (pur[eé]e|paste)|chopped tomatoes|plum tomatoes|passata|stock|dried|ground |baked beans|kidney beans|black beans|butter beans|cannellini|chickpeas|lentils|sweetcorn|garlic (powder|granules|pur[eé]e|paste)|lazy garlic|ginger (paste|powder)|lemon juice|lime juice'],
   ['bakery', 'garlic bread'],
   ['fruitveg', 'butternut|acorn squash'],
   ['snacks', 'tortilla chips|nachos|crisps|chocolate|biscuits?|sweets|popcorn|cookies?|haribo|cereal bars?|flapjacks?|doughnuts?|donuts?'],
@@ -982,7 +991,8 @@ function mergeQty(item, add) {
 // [name, £ for a pack, pack size, what the size is in (g, ml or each), extras]
 // Extras: ea = g or ml in one ("2 chicken breasts"), sub = small pieces in one
 // (cloves in a bulb of garlic), loose = sold by weight or singly so nothing's left
-// over, keeps = lasts for weeks, so leftovers don't count as waste.
+// over, keeps = lasts for weeks, so leftovers don't count as waste, dens = g in a
+// ml, for things measured in spoons (a teaspoon of ground spice is about 2.5g).
 const PRICES = [
   ['toilet (roll|paper|tissue)', 4.50, 9, 'each'], ['kitchen (roll|towel)', 2.50, 2, 'each'], ['washing.?up', 1.20, 450, 'ml'],
   ['dishwasher', 4.00, 30, 'each'], ['laundry|washing (powder|liquid|pods|capsules)|detergent', 6.00, 1, 'each'],
@@ -993,15 +1003,15 @@ const PRICES = [
   // things whose names contain other things
   ['chicken stock', 1.00, 10, 'each', { ea: 500 }], ['beef stock', 1.00, 10, 'each', { ea: 500 }], ['stock', 1.00, 10, 'each', { ea: 500 }], ['coconut milk', 0.95, 400, 'ml'], ['coconut cream', 0.85, 160, 'ml'], ['peanut butter', 2.00, 340, 'g'],
   ['butter beans|chickpeas|kidney beans|black beans|cannellini|haricot|borlotti|baked beans|mixed beans', 0.65, 400, 'g'],
-  ['chopped tomatoes|plum tomatoes|tinned tomatoes|canned tomatoes', 0.50, 400, 'g'], ['tomato (pur[eé]e|paste)', 0.60, 200, 'g'],
+  ['chopped tomatoes|plum tomatoes|tinned tomatoes|canned tomatoes', 0.50, 400, 'g'], ['tomato (pur[eé]e|paste)', 0.60, 200, 'g'], ['garlic (pur[eé]e|paste)|lazy garlic', 1.50, 90, 'g', { dens: 1 }],
   ['passata', 0.75, 500, 'g'], ['sun.?dried tomato', 2.00, 280, 'g'], ['mango chutney|chutney', 1.50, 340, 'g'], ['corned beef', 2.50, 340, 'g'], ['tortilla chips|nachos', 1.30, 200, 'g'],
   ['jalape[nñ]o', 1.20, 190, 'g'], ['gherkins?|cornichons', 1.10, 340, 'g', { ea: 30 }], ['roasted (red )?peppers|ajvar', 1.60, 460, 'g'], ['horseradish', 1.20, 185, 'g'], ['mint sauce', 1.00, 165, 'g'], ['cranberry sauce', 1.20, 200, 'g'], ['dried apricots?', 1.60, 250, 'g'], ['sweetcorn', 0.65, 325, 'g'],
   ['tuna steaks?', 4.50, 2, 'each', { ea: 125 }], ['tuna', 1.10, 145, 'g'], ['egg noodles|rice noodles|udon|noodles', 1.10, 300, 'g'],
   ['fresh pasta|tortellini|ravioli|gnocchi', 2.00, 300, 'g'], ['mangetout|sugar.?snap', 1.10, 150, 'g'],
   ['lemon juice|lime juice', 0.70, 250, 'ml', { keeps: 1 }], ['orange juice|apple juice|juice', 1.60, 1000, 'ml'],
   // herbs, spices and sauces
-  ['black pepper|peppercorns|white pepper', 1.20, 50, 'g'], ['salt', 0.65, 750, 'g'],
-  ['ground (?!beef|pork|lamb|turkey|chicken)|dried |paprika|cumin|turmeric|cinnamon|chill?i (powder|flakes)|garam masala|curry powder|coriander seeds|oregano|mixed herbs|nutmeg|cayenne|garlic (granules|powder)|onion (granules|powder)|five spice|bay lea(f|ves)|cardamom|fennel seeds|mustard seeds|cajun|fajita seasoning|seasoning|allspice|star anise|sumac|mixed spice|ras el hanout', 1.00, 40, 'g'], ['saffron', 1.50, 1, 'g'],
+  ['black pepper|peppercorns|white pepper', 1.20, 50, 'g', { dens: .5 }], ['salt', 0.65, 750, 'g', { dens: 1.2 }],
+  ['ground (?!beef|pork|lamb|turkey|chicken)|dried |paprika|cumin|turmeric|cinnamon|chill?i (powder|flakes)|garam masala|curry powder|coriander seeds|oregano|mixed herbs|nutmeg|cayenne|garlic (granules|powder)|onion (granules|powder)|five spice|bay lea(f|ves)|cardamom|fennel seeds|mustard seeds|cajun|fajita seasoning|seasoning|allspice|star anise|sumac|mixed spice|ras el hanout', 1.00, 40, 'g', { dens: .5 }], ['saffron', 1.50, 1, 'g'],
   ['balsamic', 1.50, 250, 'ml'], ['vinegar', 1.20, 350, 'ml'], ['soy sauce|soya sauce', 1.30, 250, 'ml'], ['fish sauce', 1.50, 200, 'ml'],
   ['oyster sauce|hoisin|teriyaki', 1.40, 250, 'ml'], ['sweet chilli sauce|sriracha|hot sauce|tabasco|peri.?peri', 1.50, 250, 'ml'], ['gochujang', 3.00, 170, 'g'],
   ['barbecue sauce|bbq sauce|brown sauce', 1.50, 450, 'g'], ['tartare sauce|tartar sauce', 1.30, 300, 'g'], ['worcestershire', 1.20, 150, 'ml'],
@@ -1094,7 +1104,7 @@ const PACKS = new Set(['tin', 'can', 'pack', 'packet', 'bag', 'jar', 'bottle', '
 function needOf(p, num, unit) {
   if (num == null || !(num > 0)) return p.size;
   const u = unitKey(unit), m = MEASURES[u];
-  if (m && m[0] !== 'each') { const amt = num * m[1]; return p.unit !== 'each' ? amt : p.ea ? amt / p.ea : p.size; }
+  if (m && m[0] !== 'each') { const amt = num * m[1] * (m[0] === 'ml' && p.unit === 'g' ? p.dens || 1 : 1); return p.unit !== 'each' ? amt : p.ea ? amt / p.ea : p.size; }
   if (m) num *= m[1];
   if (PACKS.has(u)) return num * p.size;
   if (p.sub && u) return num / p.sub; // cloves of garlic, sticks of celery, slices of bread
@@ -1130,8 +1140,8 @@ const money = c => (c.est ? '≈ ' : '') + gbp(c.total);
 const DEFAULT_STAPLES = ['Salt', 'Black pepper', 'Pepper', 'Water', 'Olive oil', 'Vegetable oil', 'Sunflower oil'];
 function blank() {
   const list = { id: uid(), name: 'Shopping', items: [], created: Date.now() };
-  return { v: 1, lists: [list], active: list.id, containers: [], recipes: [], meals: [], catalog: {}, trips: [],
-    settings: { theme: 'auto', groupBy: 'aisle', staples: DEFAULT_STAPLES.slice(), prices: 'std' } };
+  return { v: 1, lists: [list], active: list.id, containers: [], recipes: [], meals: [], catalog: {}, trips: [], stock: {},
+    settings: { theme: 'auto', groupBy: 'aisle', staples: DEFAULT_STAPLES.slice(), prices: 'std', tubeGarlic: true } };
 }
 function fix(s) {
   const d = blank();
@@ -1139,6 +1149,7 @@ function fix(s) {
   o.settings = Object.assign(blank().settings, (s && s.settings) || {});
   for (const k of ['lists', 'containers', 'recipes', 'meals', 'trips']) if (!Array.isArray(o[k])) o[k] = [];
   if (!o.catalog || typeof o.catalog !== 'object') o.catalog = {};
+  if (!o.stock || typeof o.stock !== 'object' || Array.isArray(o.stock)) o.stock = {};
   if (!o.lists.length) o.lists = blank().lists;
   for (const l of o.lists) { l.items = Array.isArray(l.items) ? l.items : []; for (const i of l.items) i.srcs = Array.isArray(i.srcs) ? i.srcs : []; }
   if (!o.lists.some(l => l.id === o.active)) o.active = o.lists[0].id;
@@ -1209,7 +1220,7 @@ function merge3(base, mine, theirs, key) {
   if (deq(mine, theirs)) return mine;
   if (deq(base, mine)) return theirs;
   if (deq(base, theirs)) return mine;
-  if ((key === 'count' || key === 'bought') && [base, mine, theirs].every(n => typeof n === 'number')) return mine + theirs - base;
+  if ((key === 'count' || key === 'bought' || key === 'have') && [base, mine, theirs].every(n => typeof n === 'number')) return mine + theirs - base;
   const ids = a => Array.isArray(a) && a.every(x => isObj(x) && typeof x.id === 'string');
   if (ids(mine) && ids(theirs)) return mergeById(ids(base) ? base : [], mine, theirs);
   if (isObj(mine) && isObj(theirs)) {
@@ -1414,6 +1425,8 @@ function combine(mine, theirs) {
     out.catalog[k] = o ? { ...c, ...o, count: (o.count || 0) + (c.count || 0), bought: (o.bought || 0) + (c.bought || 0), last: Math.max(o.last || 0, c.last || 0) } : c;
   }
   out.settings.staples = [...new Set([...(out.settings.staples || []), ...(mine.settings.staples || [])])];
+  out.stock = isObj(out.stock) ? out.stock : {};
+  for (const [k, x] of Object.entries(mine.stock || {})) if (!own(out.stock, k)) out.stock[k] = x;
   return out;
 }
 
@@ -1550,6 +1563,70 @@ function mdBlock(md) {
 }
 // (plurals count too, except "peppers", which are the vegetable, not the seasoning)
 const isStaple = name => { const n = norm(name); return S.settings.staples.some(s => { const k = norm(s); return k && (n === k || (n === k + 's' && k !== 'pepper')); }); };
+
+/* ================= In the cupboard ================= */
+// Long-life things (cupboard and freezer bits, and your staples) come in packs that
+// last more than one meal. Buying one puts a pack's worth in the cupboard, each recipe
+// you shop for takes out what it uses, and once there isn't enough left for a recipe
+// it goes back on the list. Amounts are in the product's own units (g, ml or pieces).
+const STOCK_CATS = new Set(['cupboard', 'frozen']);
+function stockProduct(name) {
+  const p = productFor(name);
+  return p && !p.loose && (isStaple(name) || STOCK_CATS.has(guessCat(name))) ? p : null;
+}
+const stockOf = name => own(S.stock, mkey(name));
+// No amount given: a spoonful of a staple, oil, sauce or spice, otherwise the whole pack
+function stockNeed(p, name, num, unit) {
+  if (num != null && num > 0) return needOf(p, num, unit);
+  return p.unit === 'each' ? 1 : isStaple(name) || p.unit === 'ml' || p.dens ? Math.min(15, p.size) : p.size;
+}
+function changeStock(name, amt) {
+  const k = mkey(name);
+  if (!k) return;
+  const x = own(S.stock, k) || (S.stock[k] = { name: capFirst(name), have: 0 });
+  x.have = Math.round((x.have + amt) * 100) / 100; x.at = Date.now();
+}
+// What the cupboard has towards one recipe line: { p, s (the count, if there is one), need, has }
+function cupboard(i, f = 1) {
+  const p = stockProduct(i.name);
+  if (!p) return null;
+  const s = stockOf(i.name), need = stockNeed(p, i.name, i.num != null ? i.num * f : null, i.unit);
+  return { p, s, need, has: !!s && s.have >= need - 1e-6 };
+}
+function stockAmt(p, amt) {
+  amt = Math.max(0, amt);
+  if (p.unit === 'each') return fmtNum(Math.round(amt * 2) / 2);
+  if (p.dens) return fmtNum(Math.max(.5, Math.round(amt / (5 * p.dens) * 2) / 2)) + ' tsp';
+  if (amt >= 1000) return fmtNum(Math.round(amt / 100) / 10) + (p.unit === 'g' ? 'kg' : 'l');
+  return (amt < 100 ? Math.max(5, Math.round(amt / 5) * 5) : Math.round(amt / 10) * 10) + p.unit;
+}
+// Buying a list line: whole packs go in the cupboard. Recipes have already taken out
+// what this line was for, but anything they set aside for a line that never got bought
+// shouldn't leave the count lower than that.
+function stockBought(p, i) {
+  const need = i.num == null && / \+ /.test(i.qty || '')
+    ? i.qty.split(' + ').reduce((a, q) => { const x = parseQtyOnly(q); return a + needOf(p, x.num, x.unit); }, 0)
+    : needOf(p, i.num, i.unit);
+  const got = (p.loose ? need / p.size : packsFor(p, need)) * p.size, s = stockOf(i.name), have = s ? s.have : 0;
+  changeStock(i.name, Math.max(have, -need) + got - have);
+}
+// A planned meal coming off the plan before it's cooked gives back what it took
+function giveBack(m) {
+  if (!m.cooked) for (const u of Array.isArray(m.used) ? m.used : []) if (own(S.stock, u.k)) changeStock(S.stock[u.k].name, u.amt);
+  delete m.used;
+}
+
+// Garlic: cloves in a recipe become garlic purée from a tube, about a teaspoon a clove
+const GARLIC = /^(?:fresh )?(?:garlic(?: cloves?| bulbs?| heads?)?|cloves? (?:of )?garlic)$/;
+function swapIng(i) {
+  if (!S.settings.tubeGarlic || !GARLIC.test(norm(i.name))) return i;
+  const u = unitKey(i.unit), whole = /bulb|head/.test(norm(i.name)) || u === 'head';
+  if (u === 'tsp' || u === 'tbsp' || u === 'g') return { ...i, name: 'Garlic purée' };
+  const tsp = i.num == null ? 1 : i.num * (whole ? 10 : 1);
+  const was = i.num == null ? '' : whole ? `${fmtNum(i.num)} ${i.num === 1 ? 'bulb' : 'bulbs'}` : `${fmtNum(i.num)} ${i.num === 1 ? 'clove' : 'cloves'}`;
+  return { ...i, name: 'Garlic purée', num: tsp, unit: 'tsp', qty: buildQty(tsp, 'tsp'), note: was ? `Instead of ${was}` : i.note };
+}
+const recipeIngs = r => r.ingredients.map(swapIng);
 
 const claudePrompt = (ask = 'Please write a recipe for [DISH] as a Markdown (.md) file I can import into my shopping list app.') => `${ask} Use exactly this layout:
 
@@ -1958,6 +2035,8 @@ function finishShop() {
             const c = S.catalog[key] || (S.catalog[key] = { key, name: i.name, count: 1, bought: 0, cat: i.cat });
             c.bought = (c.bought || 0) + 1; c.lastBought = now;
             if (i.price != null) c.price = i.price;
+            const p = stockProduct(i.name);
+            if (p) stockBought(p, i);
           }
           if (to) for (const i of rest) {
             const ex = to.items.find(x => !x.done && mkey(x.name) === mkey(i.name));
@@ -2050,7 +2129,7 @@ document.addEventListener('visibilitychange', () => { if (wantWake && !wake && d
 /* ================= Picker (add several items with checkboxes) ================= */
 function pickRow(r, k, onList) {
   const on = onList.has(mkey(r.name));
-  const badge = on ? '<span class="badge info">on list</span>' : r.badge ? `<span class="badge plain">${esc(r.badge)}</span>` : '';
+  const badge = on ? '<span class="badge info">on list</span>' : r.badge ? `<span class="badge ${r.badgeCls || 'plain'}">${esc(r.badge)}</span>` : '';
   return `<label class="chk${r.checked ? '' : ' off'}"><input type="checkbox" data-k="${k}"${r.checked ? ' checked' : ''}>
     ${r.qty ? `<span class="qty">${esc(r.qty)}</span>` : ''}<span class="nm">${esc(r.name)}${r.note ? `<small>${esc(r.note)}</small>` : ''}</span>${badge}</label>`;
 }
@@ -2069,6 +2148,7 @@ function wirePicker(root, rows, btn, verb = 'Add', label) {
     const c = e.target.closest('input[data-k]');
     if (!c) return;
     rows[+c.dataset.k].checked = c.checked;
+    rows[+c.dataset.k].touched = true;
     c.closest('.chk').classList.toggle('off', !c.checked);
     count();
   });
@@ -2076,7 +2156,7 @@ function wirePicker(root, rows, btn, verb = 'Add', label) {
     const s = e.target.closest('[data-sel]');
     if (!s) return;
     const on = s.dataset.sel === 'all';
-    rows.forEach(r => { r.checked = on; });
+    rows.forEach(r => { r.checked = on; r.touched = true; });
     root.querySelectorAll('input[data-k]').forEach(c => { c.checked = on; c.closest('.chk').classList.toggle('off', !on); });
     count();
   });
@@ -2140,7 +2220,7 @@ const skipIng = i => isStaple(i.name) || i.optional || /to taste/i.test(i.note |
 function recipeCost(r, serves, rows) {
   const f = (serves || r.serves || 1) / (r.serves || 1);
   let shop = 0, used = 0, n = 0;
-  for (const i of rows || r.ingredients) {
+  for (const i of rows || recipeIngs(r)) {
     if (rows ? !i.checked : skipIng(i)) continue;
     const e = estimate(i.name, i.num != null ? i.num * f : null, i.unit);
     if (e) { shop += e.cost; used += e.used; n++; }
@@ -2159,7 +2239,7 @@ function planNeeds(from, to, skip) {
     const r = mealRecipe(m);
     if (!r) continue;
     const f = (m.serves || r.serves || 1) / (r.serves || 1);
-    for (const i of r.ingredients) {
+    for (const i of recipeIngs(r)) {
       if (skipIng(i)) continue;
       const p = productFor(i.name), k = p ? p.id : mkey(i.name);
       if (!need.has(k)) need.set(k, { name: i.name, p, amt: 0 });
@@ -2200,7 +2280,7 @@ function mealIdeas(weekStart, skip) {
   for (const r of S.recipes) {
     if (planned.has(r.id)) continue;
     const uses = [], shares = [], extra = [], seen = new Set();
-    for (const i of r.ingredients) {
+    for (const i of recipeIngs(r)) {
       const k = ingKey(i.name);
       if (skipIng(i) || seen.has(k)) continue;
       seen.add(k);
@@ -2345,6 +2425,7 @@ function chooseMeal(date, replace) {
         closeSheet();
         if (replace) return withUndo(`${mealTitle(replace)} changed to ${t}`, () => {
           if (takeOff) unshop(replace);
+          giveBack(replace);
           Object.assign(replace, { rid: '', title: t, serves: 1, cooked: false });
           delete replace.shop;
         });
@@ -2393,6 +2474,7 @@ function removeMeal(m) {
   const off = unshop(m, true), title = mealTitle(m);
   const go = takeOff => withUndo(`Removed ${title}${takeOff ? ` and ${plural(off.length, 'item')} from your list` : ''}`, () => {
     if (takeOff) unshop(m);
+    giveBack(m);
     S.meals = S.meals.filter(x => x.id !== m.id);
   });
   if (!off.length) { closeSheet(); return go(false); }
@@ -2412,7 +2494,7 @@ function openMeal(m) {
   const ings = () => {
     if (!r) return '';
     let out = '', lastG = null;
-    for (const i of r.ingredients) {
+    for (const i of recipeIngs(r)) {
       if (i.group !== lastG) { if (i.group) out += `<div class="sec"><span class="eyebrow">${esc(i.group)}</span></div>`; lastG = i.group; }
       out += `<div class="ing"><span class="qty">${esc(scaledQty(i, f))}</span><span class="nm">${esc(i.name)}${i.note ? `<small>${esc(i.note)}</small>` : ''}</span></div>`;
     }
@@ -2943,14 +3025,43 @@ function openRecipe(r, o = {}) {
   const { shopOnly = false, date: planDate = '', replace = null, meal = null } = o;
   const base = r.serves || 1;
   let serves = meal && meal.serves ? meal.serves : base;
-  const rows = r.ingredients.map(i => ({ ...i, checked: !skipIng(i), badge: isStaple(i.name) ? 'staple' : i.optional ? 'optional' : '' }));
+  // already shopping for this meal: what it took from the cupboard is set aside for it
+  const reserved = new Set(meal && Array.isArray(meal.used) ? meal.used.map(u => u.k) : []);
+  const extraIng = i => i.optional || /to taste/i.test(i.note || '');
+  // ticked unless it's optional, a staple you've always got, or the cupboard has enough
+  // all of it the recipe needs, when it's in more than one line (a marinade and a sauce)
+  const needAll = (row, f) => rows.reduce((a, x) => {
+    if (mkey(x.name) !== mkey(row.name) || extraIng(x)) return a;
+    const c = cupboard(x, f);
+    return a + (c ? c.need : 0);
+  }, 0);
+  const enough = (row, f, c) => c.s.have >= needAll(row, f) - 1e-6;
+  const tickFor = (row, f) => {
+    if (extraIng(row)) return false;
+    if (reserved.has(mkey(row.name))) return false;
+    const c = cupboard(row, f);
+    if (c && c.s) return !enough(row, f, c);
+    return !isStaple(row.name);
+  };
+  const rows = recipeIngs(r).map(i => ({ ...i }));
+  rows.forEach(row => { row.checked = tickFor(row, serves / base); });
   const onList = new Set(cur().items.filter(i => !i.done).map(i => mkey(i.name)));
+  const decor = (row, f) => {
+    const c = cupboard(row, f), notes = [row.note];
+    let badge = '', badgeCls = '';
+    if (reserved.has(mkey(row.name))) { badge = 'in cupboard'; badgeCls = 'done'; }
+    else if (c && c.s && enough(row, f, c)) { badge = 'in cupboard'; badgeCls = 'done'; notes.push(`About ${stockAmt(c.p, c.s.have)} left`); }
+    else if (c && c.s && c.s.have > .01) { badge = 'running low'; badgeCls = 'open'; notes.push(`Only about ${stockAmt(c.p, c.s.have)} left`); }
+    else if (isStaple(row.name)) badge = 'staple';
+    else if (row.optional) badge = 'optional';
+    return { badge, badgeCls, note: notes.filter(Boolean).join(' · ') };
+  };
   const ingHtml = () => {
     const f = serves / base;
     let out = '', lastG = null;
     rows.forEach((row, k) => {
       if (row.group !== lastG) { if (row.group) out += `<div class="sec"><span class="eyebrow">${esc(row.group)}</span></div>`; lastG = row.group; }
-      out += pickRow({ ...row, qty: scaledQty(row, f) }, k, onList);
+      out += pickRow({ ...row, qty: scaledQty(row, f), ...decor(row, f) }, k, onList);
     });
     return out || '<p class="muted">No ingredients found. Check the file has an <code>## Ingredients</code> heading with a bullet list under it.</p>';
   };
@@ -2970,7 +3081,7 @@ function openRecipe(r, o = {}) {
       <div class="toolbar" style="margin-bottom:4px">${scaler}<span class="grow"></span><button class="linkbtn" data-sel="all">Tick all</button><button class="linkbtn" data-sel="none">Untick all</button></div>
       <div id="rIng">${ingHtml()}</div>
       <p class="costline" id="rCost" hidden></p>
-      <p class="note">Unticked items won’t be added. Cupboard staples start unticked — change them in Settings.</p>
+      <p class="note">Unticked items won’t be added. Staples, and things you’ve still got enough of in the cupboard, start unticked. Untick something you already have and the app starts keeping count of it.</p>
       ${shopOnly ? `<p style="margin:14px 0 0"><button class="linkbtn" id="rFull">Show the method and notes</button></p>` : methodHtml(r)}
       ${shopOnly ? '' : `<div class="actions" style="margin-top:18px"><button class="btn sm" id="rEdit">${ico('edit')}Edit</button><button class="btn sm" id="rDl">${ico('download')}Download .md</button><button class="btn sm danger" id="rDel">${ico('trash')}Delete</button></div>`}`,
     foot: `${r.ingredients.length ? listSelect('pkList') : ''}<div class="actions"><button class="btn" data-close>Close</button><button class="btn solid" id="rAdd"></button></div>`,
@@ -2996,8 +3107,10 @@ function openRecipe(r, o = {}) {
         const step = r.serves ? 1 : .5;
         serves = Math.max(step, Math.min(99, serves + step * +s.dataset.sc));
         $('rsN').textContent = r.serves ? fmtNum(serves) : '×' + fmtNum(serves);
+        // more servings can need more than the cupboard has (and fewer, less)
+        rows.forEach(row => { if (!row.touched) row.checked = tickFor(row, serves / base); });
         $('rIng').innerHTML = ingHtml();
-        showCost();
+        recount();
       });
       if ($('rFull')) $('rFull').onclick = () => openRecipe(r, { ...o, shopOnly: false });
       // a tag: go to the recipes page showing everything else with that tag
@@ -3023,19 +3136,35 @@ function openRecipe(r, o = {}) {
         const snap = JSON.stringify(S);
         if (replace) {
           if (o.unshop) unshop(replace);
+          giveBack(replace);
           S.meals = S.meals.filter(x => x.id !== replace.id);
         }
         const res = addEntries(l, picked, r.title);
         // what this meal put on the list, so it can come off again if the meal does
         const shop = picked.map(x => ({ l: l.id, k: mkey(x.name), num: x.num, unit: x.unit || '' }));
+        // and what it takes from the cupboard. Something you unticked that isn't
+        // counted yet: you've said you have it, so start counting from a full pack.
+        const used = [];
+        for (const x of rows) {
+          const c = cupboard(x, f), k = mkey(x.name);
+          if (!c || reserved.has(k)) continue;
+          if (!x.checked && extraIng(x)) continue;
+          let u = used.find(y => y.k === k);
+          if (!u) {
+            if (!c.s && !x.checked) { if (!x.touched) continue; changeStock(x.name, c.p.size); }
+            used.push(u = { k, amt: 0 });
+          }
+          changeStock(x.name, -c.need);
+          u.amt = Math.round((u.amt + c.need) * 100) / 100;
+        }
         let msg = picked.length ? addedMsg(res, S.lists.length > 1 ? l.name : '') : '';
         if (date) {
-          S.meals.push({ id: uid(), date, rid: r.id, title: r.title, serves, cooked: false, shop });
+          S.meals.push({ id: uid(), date, rid: r.id, title: r.title, serves, cooked: false, shop, used });
           planWeek = mondayOf(date);
           msg = [replace ? `Swapped for ${r.title}` : `Planned for ${dayLabel(date, { weekday: 'long' })}`, msg].filter(Boolean).join(' · ');
         } else if (meal) {
           const m = S.meals.find(x => x.id === meal.id);
-          if (m) m.shop = [...(Array.isArray(m.shop) ? m.shop : []), ...shop];
+          if (m) { m.shop = [...(Array.isArray(m.shop) ? m.shop : []), ...shop]; m.used = [...(Array.isArray(m.used) ? m.used : []), ...used]; }
         }
         const after = JSON.stringify(S);
         save(); render();
@@ -3150,11 +3279,35 @@ const PRICE_NOTES = { budget: 'Prices like Aldi and Lidl.', std: 'Prices like Te
 function renderSettings() {
   applyTheme();
   if (document.activeElement !== $('staples')) $('staples').value = S.settings.staples.join('\n');
+  $('tubeGarlic').checked = !!S.settings.tubeGarlic;
+  renderCupboard();
   const lv = PRICE_NOTES[S.settings.prices] ? S.settings.prices : 'std';
   document.querySelectorAll('#priceSeg button').forEach(b => b.classList.toggle('on', b.dataset.price === lv));
   $('priceNote').textContent = PRICE_NOTES[lv];
 }
 $('priceSeg').onclick = e => { const b = e.target.closest('[data-price]'); if (b) { S.settings.prices = b.dataset.price; save(); renderSettings(); } };
+function renderCupboard() {
+  const rows = Object.entries(S.stock).map(([k, s]) => ({ k, s, p: productFor(s.name) }))
+    .filter(x => x.p && x.s.have > .01)
+    .sort((a, b) => a.s.have / a.p.size - b.s.have / b.p.size || a.s.name.localeCompare(b.s.name));
+  $('cupCount').textContent = rows.length ? plural(rows.length, 'thing') : '';
+  $('cupRows').innerHTML = rows.map(({ k, s, p }) => {
+    const pct = Math.min(100, Math.round(s.have / p.size * 100));
+    return `<div class="row" data-sk="${esc(k)}"><span class="dot" style="--c:${(CAT[guessCat(s.name)] || CAT.other).color}"></span>
+      <div class="lbl">${esc(s.name)}<small>About ${esc(stockAmt(p, s.have))} left${pct < 25 ? ' · running low' : ''}</small><span class="meter${pct < 25 ? ' low' : ''}"><i style="width:${pct}%"></i></span></div>
+      <button class="tact" data-s="more" title="Bought another" aria-label="Bought another ${esc(s.name)}">${ico('plus')}</button>
+      <button class="tact del" data-s="out" title="Used it up" aria-label="${esc(s.name)} is used up">${ico('x')}</button></div>`;
+  }).join('') || '<p class="muted" style="margin:8px 0 0">Nothing counted yet. Finish a shop with some cupboard things in it, or untick something you already have when you shop for a recipe.</p>';
+}
+$('cupRows').addEventListener('click', e => {
+  const b = e.target.closest('[data-s]');
+  if (!b) return;
+  const s = own(S.stock, b.closest('[data-sk]').dataset.sk), p = s && productFor(s.name);
+  if (!p) return;
+  if (b.dataset.s === 'more') return withUndo(`Another ${s.name.toLowerCase()} in the cupboard`, () => changeStock(s.name, p.size));
+  withUndo(`${s.name} used up — it’ll go on your list next time a recipe needs it`, () => changeStock(s.name, -s.have));
+});
+$('tubeGarlic').onchange = () => { S.settings.tubeGarlic = $('tubeGarlic').checked; save(); render(); };
 $('staples').addEventListener('input', () => {
   S.settings.staples = $('staples').value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
   save();
