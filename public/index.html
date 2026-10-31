@@ -42,6 +42,16 @@
   --danger:#e0434e;
   --danger-soft:#ffe9eb;
 
+  /* a colour for each section, so the app isn't all teal */
+  --c-lists:#12b5cb;
+  --c-meals:#f0703f;
+  --c-cont:#7c5cdb;
+  --c-rec:#1baf7a;
+  --c-hist:#2a78d6;
+  --c-set:#d9558f;
+  --warm-grad:linear-gradient(150deg,#fb8a4c 0%,#ee6744 50%,#dc4b5c 100%);
+  --wash:radial-gradient(900px 480px at 100% -12%,rgba(18,181,203,.10),transparent 62%),radial-gradient(640px 420px at -8% 4%,rgba(255,201,60,.10),transparent 60%),radial-gradient(700px 520px at 50% 115%,rgba(124,92,219,.06),transparent 60%);
+
   --shadow:0 1px 2px rgba(27,43,61,.04),0 10px 28px rgba(27,43,61,.055);
   --shadow-hover:0 3px 8px rgba(27,43,61,.07),0 18px 40px rgba(27,43,61,.09);
   --radius:18px;
@@ -82,7 +92,7 @@
 /* ============ Base ============ */
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--wash),var(--bg);background-attachment:fixed;color:var(--text);font-family:var(--ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid rgba(18,181,203,.45);outline-offset:2px}
@@ -113,9 +123,17 @@ svg{flex:none}
   font-size:14px;font-weight:650;color:var(--muted);text-align:left;
   transition:background .14s ease,color .14s ease;
 }
-.tab svg{width:19px;height:19px}
-.tab:hover{background:var(--surface-2);color:var(--text)}
-.tab.on{background:var(--brand-grad);color:#fff;box-shadow:0 7px 18px rgba(18,181,203,.28)}
+.tab svg{width:19px;height:19px;color:var(--sec)}
+.tab:hover{background:color-mix(in srgb,var(--sec) 9%,transparent);color:var(--text)}
+.tab.on{background:linear-gradient(150deg,color-mix(in srgb,var(--sec) 82%,#fff) 0%,var(--sec) 50%,color-mix(in srgb,var(--sec) 84%,#000) 100%);color:#fff;box-shadow:0 7px 18px color-mix(in srgb,var(--sec) 30%,transparent)}
+.tab.on svg{color:#fff}
+/* each section has its own colour */
+.tab[data-view="lists"],#v-lists{--sec:var(--c-lists)}
+.tab[data-view="plan"],#v-plan{--sec:var(--c-meals)}
+.tab[data-view="containers"],#v-containers{--sec:var(--c-cont)}
+.tab[data-view="recipes"],#v-recipes{--sec:var(--c-rec)}
+.tab[data-view="history"],#v-history{--sec:var(--c-hist)}
+.tab[data-view="settings"],#v-settings{--sec:var(--c-set)}
 .tab .cnt{margin-left:auto;font-family:var(--mono);font-size:11px;font-weight:750;background:var(--accent);color:#5c4400;border-radius:999px;padding:1px 7px}
 .railfoot{margin-top:auto;padding:14px 12px 2px;border-top:1px solid var(--border);font-size:11px;color:var(--muted-2);font-weight:650;line-height:1.5}
 .workcol{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -154,6 +172,7 @@ main{padding:var(--pad);width:100%;max-width:1100px;margin:0 auto}
   box-shadow:var(--shadow);padding:20px 22px;min-width:0;
 }
 .card h3{margin:0 0 14px;font-size:15px;font-weight:750;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.view > .stack > .grid2 > .card > h3::before,#v-settings .card > h3::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--sec);flex:none}
 .card h3 .sub{margin-left:auto;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
 .stack{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
@@ -163,6 +182,12 @@ main{padding:var(--pad);width:100%;max-width:1100px;margin:0 auto}
 .tile{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px 18px;min-width:0}
 .tile b{display:block;font-family:var(--mono);font-size:22px;font-weight:750;line-height:1.1;margin-top:8px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tile small{display:block;margin-top:5px;font-size:11.5px;color:var(--muted);font-weight:600}
+.tiles .tile{--tc:var(--c-lists);background:linear-gradient(160deg,color-mix(in srgb,var(--tc) 13%,var(--surface)) 0%,var(--surface) 75%);border-color:color-mix(in srgb,var(--tc) 22%,var(--border));position:relative;overflow:hidden}
+.tiles .tile::after{content:"";position:absolute;right:-26px;top:-26px;width:72px;height:72px;border-radius:50%;background:color-mix(in srgb,var(--tc) 14%,transparent);pointer-events:none}
+.tiles .tile:nth-child(2){--tc:var(--c-meals)}
+.tiles .tile:nth-child(3){--tc:var(--c-cont)}
+.tiles .tile:nth-child(4){--tc:var(--c-rec)}
+.tiles .tile .eyebrow{color:color-mix(in srgb,var(--tc) 70%,var(--text))}
 
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -202,9 +227,9 @@ main{padding:var(--pad);width:100%;max-width:1100px;margin:0 auto}
 
 .banner{
   display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;
-  background:var(--brand-soft);border:1px solid rgba(18,181,203,.3);color:var(--text);
+  background:color-mix(in srgb,var(--sec,var(--brand)) 11%,var(--surface));border:1px solid color-mix(in srgb,var(--sec,var(--brand)) 30%,transparent);color:var(--text);
 }
-.banner .bico{width:36px;height:36px;border-radius:11px;background:var(--brand);display:grid;place-items:center;flex:none;color:#fff}
+.banner .bico{width:36px;height:36px;border-radius:11px;background:var(--sec,var(--brand));display:grid;place-items:center;flex:none;color:#fff;box-shadow:0 5px 12px color-mix(in srgb,var(--sec,var(--brand)) 30%,transparent)}
 .banner .bico svg{width:19px;height:19px}
 .banner p{margin:0;font-size:13px;color:var(--text-2)}
 .banner b{display:block;font-size:14px;color:var(--text)}
@@ -248,6 +273,7 @@ select.input{appearance:auto}
   box-shadow:0 14px 34px rgba(18,181,203,.28);position:relative;overflow:hidden;
 }
 .hero::after{content:"";position:absolute;right:-60px;top:-80px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.hero::before{content:"";position:absolute;left:-70px;bottom:-150px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,var(--glow,rgba(255,255,255,.13)),transparent 68%);pointer-events:none}
 .hero .eyebrow{color:rgba(255,255,255,.8)}
 .hero-top{display:flex;align-items:flex-end;gap:14px 18px;flex-wrap:wrap;position:relative;z-index:1}
 .hero-net{font-size:clamp(36px,6.5vw,54px);font-weight:800;letter-spacing:-.035em;line-height:1;margin:8px 0 12px;font-variant-numeric:tabular-nums}
@@ -286,11 +312,14 @@ select.input{appearance:auto}
 .pill:hover{border-color:var(--border-strong);color:var(--text)}
 .pill svg{width:15px;height:15px;color:var(--brand-ink)}
 .pill.on{background:var(--brand-soft);border-color:rgba(18,181,203,.4);color:var(--brand-ink)}
+.pill[data-act="from-container"] svg{color:var(--c-cont)}
+.pill[data-act="from-recipe"] svg{color:var(--c-rec)}
+.pill[data-act="again"] svg{color:var(--c-meals)}
 
 .grp{padding:6px 8px}
-.grp-h{display:flex;align-items:center;gap:10px;padding:10px 12px 6px}
-.grp-h i{width:10px;height:10px;border-radius:3px;background:var(--c);flex:none}
-.grp-h b{font-size:12px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--text-2)}
+.grp-h{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:2px 0 4px;border-radius:12px;background:color-mix(in srgb,var(--c,var(--muted-2)) 10%,transparent)}
+.grp-h i{width:10px;height:10px;border-radius:3px;background:var(--c);flex:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent)}
+.grp-h b{font-size:12px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--c,var(--text-2)) 60%,var(--text))}
 .grp-h span{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:700}
 .grp-h .linkbtn{margin-left:10px}
 .item{
@@ -305,7 +334,8 @@ select.input{appearance:auto}
   display:grid;place-items:center;padding:0;transition:background .15s,border-color .15s;
 }
 .tick svg{width:15px;height:15px;color:#fff;opacity:0;transform:scale(.5);transition:opacity .15s,transform .15s}
-.item:hover .tick{border-color:var(--brand-2)}
+.grp .tick{border-color:color-mix(in srgb,var(--c,var(--border-strong)) 40%,var(--border-strong))}
+.item:hover .tick{border-color:var(--c,var(--brand-2))}
 .item.done .tick{background:var(--success);border-color:var(--success)}
 .item.done .tick svg{opacity:1;transform:none}
 .ibody{flex:1;min-width:0}
@@ -317,9 +347,9 @@ select.input{appearance:auto}
 .item .price.est{color:var(--muted);font-weight:600}
 .item.done .ibody b{text-decoration:line-through;color:var(--muted)}
 .item.done .qty,.item.done .price{color:var(--muted)}
-.basket .grp-h i{background:var(--success)}
+.basket{--c:var(--success)}
 .empty{text-align:center;padding:44px 24px}
-.empty .bigmark{width:64px;height:64px;border-radius:20px;margin:0 auto 16px}
+.empty .bigmark{width:64px;height:64px;border-radius:20px;margin:0 auto 16px;background:linear-gradient(150deg,color-mix(in srgb,var(--sec,var(--brand)) 80%,#fff),var(--sec,var(--brand)) 50%,color-mix(in srgb,var(--sec,var(--brand)) 84%,#000));box-shadow:0 8px 18px color-mix(in srgb,var(--sec,var(--brand)) 30%,transparent)}
 .empty .bigmark svg{width:30px;height:30px}
 .empty h2{margin:0 0 6px;font-size:21px;letter-spacing:-.02em}
 .empty p{margin:0 auto 18px;color:var(--muted);max-width:440px}
@@ -328,8 +358,8 @@ select.input{appearance:auto}
 .steps li{margin:4px 0}
 
 /* ============ Containers & recipes ============ */
-.card.cont{display:flex;flex-direction:column;cursor:pointer;transition:border-color .12s}
-.card.cont:hover{border-color:var(--border-strong)}
+.card.cont{display:flex;flex-direction:column;cursor:pointer;transition:border-color .12s;background:linear-gradient(180deg,color-mix(in srgb,var(--c,var(--brand)) 9%,var(--surface)) 0,var(--surface) 96px)}
+.card.cont:hover{border-color:color-mix(in srgb,var(--c,var(--brand)) 40%,var(--border-strong))}
 .cont-h{display:flex;align-items:center;gap:12px;margin-bottom:10px;min-width:0}
 .cico{width:42px;height:42px;border-radius:12px;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c);display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
 .cont-h div{min-width:0}
@@ -372,7 +402,13 @@ button.badge:hover{box-shadow:inset 0 0 0 1px currentColor}
 .weeklbl small{display:block;font-size:12px;color:var(--muted);font-weight:650;white-space:nowrap}
 .days{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 .day{padding:14px 16px;display:flex;flex-direction:column;gap:4px}
-.day.today{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand),var(--shadow)}
+.day.today{border-color:var(--sec);box-shadow:0 0 0 1px var(--sec),var(--shadow)}
+.day.today .badge.info{background:color-mix(in srgb,var(--sec) 15%,transparent);color:color-mix(in srgb,var(--sec) 70%,var(--text))}
+#v-plan .addmeal{color:color-mix(in srgb,var(--sec) 75%,var(--text))}
+#v-plan .hero{--glow:rgba(255,214,102,.38);background:var(--warm-grad);box-shadow:0 14px 34px rgba(238,103,68,.28)}
+#v-plan .hero .btn.white{color:#c2462f}
+#v-plan .hero .btn.white:hover{background:#fff4ef}
+#v-plan .hero .tmeal .done-ico{color:#c2462f}
 .day.past{opacity:.72}
 .day-h{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
 .day-h b{font-size:14px;font-weight:750}
@@ -541,7 +577,8 @@ details.trip[open] summary::after{transform:rotate(90deg)}
   .tabs{flex-direction:row;width:100%;gap:2px}
   .tab{flex:1;flex-direction:column;gap:3px;padding:7px 1px 5px;font-size:10.5px;font-weight:700;text-align:center;border-radius:12px;position:relative;min-width:0}
   .tab svg{width:21px;height:21px}
-  .tab.on{background:var(--brand-soft);color:var(--brand-ink);box-shadow:none}
+  .tab.on{background:color-mix(in srgb,var(--sec) 14%,transparent);color:color-mix(in srgb,var(--sec) 75%,var(--text));box-shadow:none}
+  .tab.on svg{color:var(--sec)}
   .tab .cnt{position:absolute;top:3px;left:calc(50% + 6px);margin:0;font-size:9.5px;padding:0 5px}
   header{min-height:0;padding:calc(12px + env(safe-area-inset-top)) var(--pad) 12px;gap:12px}
   header .brandmark{display:grid}
@@ -1686,7 +1723,7 @@ function renderGroups() {
   for (const g of groups.values()) {
     if (!g.items.length) continue;
     const tick = g.items.length > 1 && several ? `<button class="linkbtn" data-tick="${g.items.map(i => i.id).join(',')}">Tick all</button>` : '';
-    html += `<div class="card grp"><div class="grp-h"><i style="--c:${g.color}"></i><b>${esc(g.name)}</b><span>${g.items.length}</span>${tick}</div>${g.items.map(itemRow).join('')}</div>`;
+    html += `<div class="card grp" style="--c:${g.color}"><div class="grp-h"><i></i><b>${esc(g.name)}</b><span>${g.items.length}</span>${tick}</div>${g.items.map(itemRow).join('')}</div>`;
   }
   if (!todo.length) html += `<div class="card empty" style="padding:30px 20px"><h2>Got everything</h2><p>Tap <b>Finish shop</b> to save this shop to your history and clear the ticked items.</p><div class="actions"><button class="btn solid" data-act="finish">${ico('flag')}Finish shop</button></div></div>`;
   if (done.length) {
@@ -2414,7 +2451,7 @@ function renderContainers() {
     </div>`;
     return;
   }
-  g.innerHTML = S.containers.map(c => `<div class="card cont" data-cid="${c.id}">
+  g.innerHTML = S.containers.map(c => `<div class="card cont" data-cid="${c.id}" style="--c:${hueFor(c.name)}">
     <div class="cont-h"><div class="cico" style="--c:${hueFor(c.name)}">${esc((c.name.trim()[0] || '?').toUpperCase())}</div><div><b>${esc(c.name)}</b><small>${plural(c.items.length, 'item')}</small></div></div>
     <p class="prev">${c.items.length ? esc(c.items.map(i => i.name).join(', ')) : '<span class="muted">Empty — tap to add items</span>'}</p>
     <div class="actions"><button class="btn solid" data-c="add"${c.items.length ? '' : ' disabled'}>${ico('plus')}Add to list</button><button class="btn" data-c="edit">${ico('edit')}Edit</button></div>
@@ -2665,7 +2702,7 @@ function renderRecipes() {
   }
   g.innerHTML = list.map(r => {
     const ks = recipeKinds(r), tags = shownTags(r), cheap = isBudget(r), own = !!r.own, n = counts.get(r.id);
-    return `<div class="card cont" data-rid="${r.id}">
+    return `<div class="card cont" data-rid="${r.id}" style="--c:${hueFor(r.title)}">
       <div class="cont-h"><div class="cico" style="--c:${hueFor(r.title)}">${esc((r.title.trim()[0] || '?').toUpperCase())}</div><div><b>${esc(r.title)}</b><small>${esc(recipeMeta(r))}${n ? ` · ${timesPlanned(n)}` : ''}</small></div>${favBtn(r)}</div>
       ${ks.length || tags.length || cheap || own ? `<div class="tags">${own ? ownFilterBadge() : ''}${ks.map(kindFilterBadge).join('')}${cheap ? budgetFilterBadge() : ''}${tags.map(tagFilterBadge).join('')}</div>` : ''}
       <p class="prev">${esc(r.ingredients.map(i => i.name).join(', ')) || '<span class="muted">No ingredients found</span>'}</p>
