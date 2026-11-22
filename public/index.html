@@ -218,6 +218,7 @@ main{padding:var(--pad);width:100%;max-width:1100px;margin:0 auto}
 .badge.info{background:var(--brand-soft);color:var(--brand-ink)}
 .badge.plain{background:var(--surface-3);color:var(--text-2)}
 .muted{color:var(--muted)}
+.note.err{color:var(--danger)}
 .note{font-size:12.5px;color:var(--muted);margin:10px 0 0}
 .seg{display:inline-flex;gap:4px;background:var(--surface-3);padding:4px;border-radius:999px}
 .seg button{border:none;background:none;padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--muted)}
@@ -537,6 +538,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
 .menu button.danger,.menu button.danger svg{color:var(--danger)}
 .menu button small{display:block;font-size:12px;color:var(--muted);font-weight:600}
 .pickrow{display:flex;align-items:center;gap:12px;width:100%;padding:12px 6px;border:none;border-bottom:1px solid var(--surface-3);background:none;text-align:left;border-radius:10px}
+.pickrow > svg{width:16px;height:16px;color:var(--muted)}
 .pickrow:hover{background:var(--surface-2)}
 .pickrow .lbl{flex:1;min-width:0;font-weight:650;font-size:14.5px}
 .pickrow .lbl small{display:block;font-size:12px;color:var(--muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -611,6 +613,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
   .erow.one{grid-template-columns:minmax(0,1fr) auto}
   .days{grid-template-columns:minmax(0,1fr)}
   .weekbar .btn.sm{padding:7px 10px}
+  #weekShare span{display:none}
   .banner{flex-wrap:wrap}
   .banner .btn{margin-left:50px}
   #toast{bottom:calc(90px + env(safe-area-inset-bottom))}
@@ -735,6 +738,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
             <button class="iconbtn" data-act="week-next" title="Next week" aria-label="Next week"><svg><use href="#i-chevr"/></svg></button>
             <span class="grow"></span>
             <button class="btn sm" data-act="week-today" id="weekToday">This week</button>
+            <button class="btn sm" data-act="week-share" id="weekShare" title="Send this week’s meal plan to someone"><svg><use href="#i-share"/></svg><span>Share</span></button>
           </div>
           <div class="days" id="planDays"></div>
           <div id="planIdeas"></div>
@@ -2381,6 +2385,7 @@ $('v-plan').addEventListener('click', e => {
     if (a.dataset.act === 'add-meal') return chooseMeal(a.closest('[data-date]').dataset.date);
     if (a.dataset.act === 'leftover-prompt') return leftoverPrompt();
     if (a.dataset.act === 'toggle-past') { showPast = !showPast; return renderPlan(); }
+    if (a.dataset.act === 'week-share') return shareWeek();
   }
   const idea = e.target.closest('[data-idea]');
   if (idea) { const r = S.recipes.find(x => x.id === idea.dataset.idea); return r && openRecipe(r, { shopOnly: true, date: nextFreeDay() }); }
@@ -2517,6 +2522,159 @@ function openMeal(m) {
       $('mSwap').onclick = () => chooseMeal(m.date, m);
       $('mDel').onclick = () => removeMeal(m);
       if ($('mShop')) $('mShop').onclick = () => openRecipe(r, { shopOnly: true, meal: m });
+    },
+  });
+}
+
+/* ----- sending a week's plan to someone ----- */
+// The week's meals and their recipes are saved as a read-only copy on the site
+// (netlify/functions/plans.mts), so the message can link to each recipe.
+const planLink = (id, k) => `${location.origin}${location.pathname}#plan=${id}${k ? '&m=' + k : ''}`;
+const weekRange = (from, to) => `${dayLabel(from, { day: 'numeric', month: 'short' })} – ${dayLabel(to, { day: 'numeric', month: 'short' })}`;
+const byDate = (a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+async function shareWeek() {
+  const week = planWeek, end = addDays(week, 6);
+  const meals = S.meals.filter(m => m.date >= week && m.date <= end).sort(byDate);
+  if (!meals.length) return toast('Nothing planned this week to share', { err: true });
+  const recipes = [], at = new Map();
+  const plan = { v: 1, week, recipes, meals: meals.map(m => {
+    const r = mealRecipe(m), o = { d: m.date, t: mealTitle(m) };
+    if (r) {
+      if (!at.has(r.id)) { at.set(r.id, recipes.length); recipes.push(r.md); }
+      o.r = at.get(r.id);
+      if (m.serves) o.s = m.serves;
+    }
+    return o;
+  }) };
+  openSheet({ title: 'Share the meal plan', wide: true, body: '<p class="muted" style="margin:6px 0 14px">Making links to the recipes…</p>' });
+  const loading = $('sheetBody');
+  let id = null, err = '';
+  try {
+    const res = await fetch('/api/plans', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(plan) });
+    const out = await res.json().catch(() => null);
+    if (res.ok && out && out.id) id = out.id;
+    else err = (out && out.error) || `the server said ${res.status}`;
+  } catch { err = navigator.onLine === false ? 'you’re offline' : 'couldn’t reach the server'; }
+  if ($('sheetBody') !== loading || $('sheet').hidden) return;
+  const title = `Meal plan for ${weekRange(week, end)}`;
+  const lines = [title];
+  let last = '';
+  plan.meals.forEach((m, k) => {
+    if (m.d !== last) { lines.push('', dayLabel(m.d, { weekday: 'long', day: 'numeric', month: 'short' })); last = m.d; }
+    lines.push(m.t + (id && m.r != null ? `\n${planLink(id, k + 1)}` : ''));
+  });
+  if (id && recipes.length) lines.push('', `The whole week, with every recipe:\n${planLink(id)}`);
+  const text = lines.join('\n');
+  openSheet({
+    title: 'Share the meal plan', wide: true,
+    body: `${id ? `<p class="note" style="margin:0 0 10px">Send this to anyone. Each link opens the recipe in the app, where they can save it, plan it and shop for it. The links show the plan as it is now: if you change it, share it again.</p>`
+        : `<p class="note err" style="margin:0 0 10px">Couldn’t make links to the recipes (${esc(err)}), so this just lists the meals. Try again when you have signal to include them.</p>`}
+      <textarea class="input" id="spText" readonly style="min-height:300px;font-family:var(--ui);font-size:14px">${esc(text)}</textarea>`,
+    foot: `<div class="actions"><button class="btn" id="spCopy">${ico('copy')}Copy</button>${navigator.share ? `<button class="btn solid" id="spShare">${ico('share')}Share…</button>` : ''}</div>`,
+    mount: () => {
+      $('spCopy').onclick = () => copyText(text, 'Meal plan copied — paste it into a message');
+      if ($('spShare')) $('spShare').onclick = () => shareText(title, text, 'Meal plan copied — paste it into a message');
+    },
+  });
+}
+
+/* ----- opening a meal plan someone sent: …/#plan=ID, or …/#plan=ID&m=2 for one meal ----- */
+async function openSharedPlan(id, k) {
+  openSheet({ title: 'Meal plan', wide: true, body: '<p class="muted" style="margin:6px 0 14px">Opening the meal plan…</p>' });
+  const loading = $('sheetBody');
+  let p;
+  try {
+    const res = await fetch('/api/plans?id=' + encodeURIComponent(id));
+    p = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((p && p.error) || 'Couldn’t open that meal plan');
+    if (!p || !Array.isArray(p.meals) || !Array.isArray(p.recipes)) throw new Error('Couldn’t open that meal plan');
+  } catch (e) {
+    if ($('sheetBody') === loading && !$('sheet').hidden) closeSheet();
+    return toast(navigator.onLine === false ? 'You’re offline — open the link again when you have signal' : e.message || 'Couldn’t open that meal plan', { err: true });
+  }
+  if ($('sheetBody') !== loading || $('sheet').hidden) return;
+  const sp = { week: p.week, meals: p.meals.filter(m => m && typeof m.t === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(m.d)), recs: p.recipes.map(md => parseRecipe(String(md), '')) };
+  const m = sp.meals[k - 1];
+  if (m && sp.recs[m.r]) return sharedMeal(sp, k - 1);
+  sharedPlan(sp);
+}
+const haveRecipe = r => S.recipes.find(x => norm(x.title) === norm(r.title));
+// Your own copy of a shared recipe (or the one you've already got with that name)
+function keepRecipe(r) {
+  const ex = haveRecipe(r);
+  if (ex) return ex;
+  const n = parseRecipe(r.md, '');
+  S.recipes.unshift(n);
+  return n;
+}
+function sharedMeta(r, serves) {
+  return [r.serves ? `Serves ${fmtNum(serves || r.serves)}` : '', r.time].filter(Boolean).join(' · ') || plural(r.ingredients.length, 'ingredient');
+}
+function sharedPlan(sp) {
+  const end = addDays(sp.week, 6);
+  let body = '<p class="note" style="margin:0 0 6px">Someone’s shared their meals for the week. Tap one to see the recipe.</p>', last = '';
+  sp.meals.forEach((m, k) => {
+    if (m.d !== last) { body += `<div class="sec"><span class="eyebrow">${esc(dayLabel(m.d, { weekday: 'long', day: 'numeric', month: 'short' }))}</span></div>`; last = m.d; }
+    const r = sp.recs[m.r];
+    body += r ? `<button class="pickrow" data-k="${k}"><div class="cico" style="--c:${hueFor(m.t)}">${esc((m.t.trim()[0] || '?').toUpperCase())}</div><span class="lbl">${esc(m.t)}<small>${esc(sharedMeta(r, m.s))}</small></span>${haveRecipe(r) ? '<span class="badge info">In your recipes</span>' : ''}${ico('chevr')}</button>`
+      : `<div class="pickrow"><div class="cico" style="--c:${hueFor(m.t)}">${esc((m.t.trim()[0] || '?').toUpperCase())}</div><span class="lbl">${esc(m.t)}<small>No recipe</small></span></div>`;
+  });
+  const fresh = sp.recs.filter(r => !haveRecipe(r)).length;
+  openSheet({
+    title: `Meal plan · ${weekRange(sp.week, end)}`, wide: true, body,
+    foot: `<div class="actions">${fresh ? `<button class="btn" id="spSave">${ico('download')}Save ${plural(fresh, 'recipe')}</button>` : ''}<button class="btn solid" id="spPlan">${ico('calendar')}Add to my plan</button></div>`,
+    mount: b => {
+      b.onclick = e => { const r = e.target.closest('button[data-k]'); if (r) sharedMeal(sp, +r.dataset.k); };
+      if ($('spSave')) $('spSave').onclick = () => {
+        closeSheet();
+        withUndo(`${plural(fresh, 'recipe')} saved to your recipes`, () => { for (const r of sp.recs) keepRecipe(r); });
+      };
+      // Same days as theirs; open each meal to shop for it
+      $('spPlan').onclick = () => {
+        const snap = JSON.stringify(S);
+        let n = 0;
+        for (const m of sp.meals) {
+          const r = sp.recs[m.r], mine = r && keepRecipe(r), title = mine ? mine.title : m.t;
+          if (S.meals.some(x => x.date === m.d && norm(mealTitle(x)) === norm(title))) continue;
+          S.meals.push({ id: uid(), date: m.d, rid: mine ? mine.id : '', title, serves: mine ? m.s || mine.serves || 1 : 1, cooked: false });
+          n++;
+        }
+        const after = JSON.stringify(S);
+        closeSheet();
+        planWeek = mondayOf(sp.week);
+        save();
+        if (view !== 'plan') setView('plan'); else render();
+        toast(n ? `${plural(n, 'meal')} added to your plan — open one and tap “Shop for it again” to add its ingredients` : 'Those meals are already on your plan',
+          n ? { undo: () => undoTo(snap, after) } : {});
+      };
+    },
+  });
+}
+function sharedMeal(sp, k) {
+  const m = sp.meals[k], r = sp.recs[m.r], serves = m.s || r.serves || 1;
+  const f = serves / (r.serves || 1);
+  let ings = '', lastG = null;
+  for (const i of recipeIngs(r)) {
+    if (i.group !== lastG) { if (i.group) ings += `<div class="sec"><span class="eyebrow">${esc(i.group)}</span></div>`; lastG = i.group; }
+    ings += `<div class="ing"><span class="qty">${esc(scaledQty(i, f))}</span><span class="nm">${esc(i.name)}${i.note ? `<small>${esc(i.note)}</small>` : ''}</span></div>`;
+  }
+  const have = haveRecipe(r);
+  openSheet({
+    title: m.t, wide: true,
+    body: `<div class="rmeta" style="margin:0 0 10px"><span class="badge info">${esc(dayLabel(m.d, { weekday: 'long', day: 'numeric', month: 'short' }))}</span><span>${esc(sharedMeta(r, serves))}</span>${have ? '<span class="badge plain">In your recipes</span>' : ''}</div>
+      ${sp.meals.length > 1 ? `<p style="margin:0 0 10px"><button class="linkbtn" id="smAll">‹ The whole week’s plan</button></p>` : ''}
+      ${r.intro ? `<div class="md">${mdBlock(r.intro)}</div>` : ''}
+      ${r.ingredients.length ? `<div class="sec"><span class="eyebrow">Ingredients${r.serves ? ` for ${fmtNum(serves)}` : ''}</span></div><div class="ings">${ings}</div>` : ''}
+      ${methodHtml(r)}`,
+    foot: `<div class="actions">${have ? '' : `<button class="btn" id="smSave">${ico('download')}Save recipe</button>`}<button class="btn solid" id="smShop">${ico('basket')}Plan &amp; shop</button></div>`,
+    mount: () => {
+      if ($('smAll')) $('smAll').onclick = () => sharedPlan(sp);
+      if ($('smSave')) $('smSave').onclick = () => { keepRecipe(r); save(); render(); sharedMeal(sp, k); toast(`${r.title} saved to your recipes`); };
+      $('smShop').onclick = () => {
+        const mine = keepRecipe(r);
+        save(); render();
+        openRecipe(mine, { shopOnly: true, date: m.d < todayIso() ? todayIso() : m.d, serves: mine.serves ? serves : undefined });
+      };
     },
   });
 }
@@ -3024,7 +3182,7 @@ function scaledQty(i, f) { return f === 1 || i.num == null ? i.qty : buildQty(i.
 function openRecipe(r, o = {}) {
   const { shopOnly = false, date: planDate = '', replace = null, meal = null } = o;
   const base = r.serves || 1;
-  let serves = meal && meal.serves ? meal.serves : base;
+  let serves = meal && meal.serves ? meal.serves : o.serves || base;
   // already shopping for this meal: what it took from the cupboard is set aside for it
   const reserved = new Set(meal && Array.isArray(meal.used) ? meal.used.map(u => u.k) : []);
   const extraIng = i => i.optional || /to taste/i.test(i.note || '');
@@ -3419,7 +3577,14 @@ window.addEventListener('online', () => { if (Y) sync(); });
 {
   const m = location.hash.match(/join=([A-Za-z0-9-]+)/);
   if (m) { history.replaceState(null, '', location.pathname + location.search); joinSheet(cleanCode(m[1]), true); }
+  // Meal plan links look like …/#plan=XXXXXXXXXX, or …/#plan=XXXXXXXXXX&m=2 for one meal
+  planFromHash();
 }
+function planFromHash() {
+  const p = location.hash.match(/plan=([A-Za-z0-9]{10})(?:&m=(\d+))?/);
+  if (p) { history.replaceState(null, '', location.pathname + location.search); openSharedPlan(p[1].toUpperCase(), +(p[2] || 0)); }
+}
+window.addEventListener('hashchange', planFromHash);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
