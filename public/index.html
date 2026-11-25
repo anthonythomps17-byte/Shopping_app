@@ -49,6 +49,7 @@
   --c-rec:#1baf7a;
   --c-hist:#2a78d6;
   --c-set:#d9558f;
+  --c-pocket:#a24fe0;
   --warm-grad:linear-gradient(150deg,#fb8a4c 0%,#ee6744 50%,#dc4b5c 100%);
   --wash:radial-gradient(900px 480px at 100% -12%,rgba(18,181,203,.10),transparent 62%),radial-gradient(640px 420px at -8% 4%,rgba(255,201,60,.10),transparent 60%),radial-gradient(700px 520px at 50% 115%,rgba(124,92,219,.06),transparent 60%);
 
@@ -134,6 +135,7 @@ svg{flex:none}
 .tab[data-view="recipes"],#v-recipes{--sec:var(--c-rec)}
 .tab[data-view="history"],#v-history{--sec:var(--c-hist)}
 .tab[data-view="settings"],#v-settings{--sec:var(--c-set)}
+.tab[data-view="pocket"],#v-pocket{--sec:var(--c-pocket)}
 .tab .cnt{margin-left:auto;font-family:var(--mono);font-size:11px;font-weight:750;background:var(--accent);color:#5c4400;border-radius:999px;padding:1px 7px}
 .railfoot{margin-top:auto;padding:14px 12px 2px;border-top:1px solid var(--border);font-size:11px;color:var(--muted-2);font-weight:650;line-height:1.5}
 .workcol{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -556,6 +558,21 @@ details.trip[open] summary::after{transform:rotate(90deg)}
 #toast.err{background:var(--danger);color:#fff}
 #toast button{background:none;border:none;color:inherit;font-weight:800;padding:0;text-decoration:underline;text-underline-offset:3px}
 
+/* ============ Pocket money ============ */
+#v-pocket .hero{--glow:rgba(255,170,220,.42);background:linear-gradient(140deg,#8b4dff 0%,#b44fe0 50%,#ff5fab 100%);box-shadow:0 14px 34px rgba(180,79,224,.3)}
+#v-pocket .hero .btn.white{color:#8a3bd6}
+#v-pocket .hero .btn.white:hover{background:#f8f1ff}
+.pk-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.pk-day{padding:14px 12px 8px}
+.pk-day h3{margin:0 0 6px;padding:0 6px}
+.pk-day.done{border-color:color-mix(in srgb,var(--success) 45%,var(--border));background:linear-gradient(160deg,var(--success-soft) 0%,var(--surface) 80%)}
+.pk-day.today:not(.done){border-color:color-mix(in srgb,var(--c-pocket) 45%,var(--border))}
+.pk-day .item{padding:11px 8px}
+.pk-day .item .ibody b{font-size:15.5px}
+.pk-day .item.done .ibody b{text-decoration:none;color:var(--text)}
+#v-pocket .tiles .tile:nth-child(1){--tc:var(--c-pocket)}
+#v-pocket .tiles .tile:nth-child(2){--tc:var(--success)}
+
 /* ============ Sharing between phones ============ */
 #syncBtn{position:relative}
 #syncBtn::after{content:"";position:absolute;right:7px;bottom:8px;width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 0 2px var(--surface)}
@@ -658,6 +675,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
     <symbol id="i-chevl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></symbol>
     <symbol id="i-chevr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></symbol>
     <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H8a6 6 0 1 1 5.7-7.9A4.5 4.5 0 1 1 17.5 19z"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.6 8.6A2.4 2.4 0 0 0 10.3 10v6M8.6 12.6h4.6M8.6 16h6.8"/></symbol>
     <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
   </defs>
 </svg>
@@ -674,6 +692,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
       <button class="tab" data-view="containers"><svg><use href="#i-box"/></svg>Containers</button>
       <button class="tab" data-view="recipes"><svg><use href="#i-book"/></svg>Recipes</button>
       <button class="tab" data-view="history"><svg><use href="#i-clock"/></svg>History</button>
+      <button class="tab" data-view="pocket"><svg><use href="#i-coin"/></svg>Pocket</button>
       <button class="tab" data-view="settings"><svg><use href="#i-gear"/></svg>Settings</button>
     </nav>
     <div class="railfoot" id="railFoot">Stored on this device only.<br>Nothing is sent anywhere.</div>
@@ -788,6 +807,26 @@ details.trip[open] summary::after{transform:rotate(90deg)}
               <h3>Past shops <span class="sub" id="tripCount"></span></h3>
               <div id="tripRows"></div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ POCKET MONEY ============ -->
+      <section class="view" id="v-pocket">
+        <div class="stack">
+          <div class="hero" id="pkHero"></div>
+          <div class="pk-days" id="pkDays"></div>
+          <div class="card">
+            <h3>Savings</h3>
+            <div class="fgrid">
+              <div class="field"><label for="pkName">Name</label><input class="input" id="pkName" placeholder="Enter name" autocomplete="off" autocapitalize="words"></div>
+              <div class="field"><label for="pkSavings">Savings balance</label><div class="money"><input class="input" id="pkSavings" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div></div>
+            </div>
+            <div class="tiles" style="margin-top:14px">
+              <div class="tile"><div class="eyebrow">10% monthly interest</div><b id="pkInterest">£0.00</b></div>
+              <div class="tile"><div class="eyebrow">After interest</div><b id="pkTotal">£0.00</b></div>
+            </div>
+            <p class="note">Interest is calculated at 10% per month from the savings value entered.</p>
           </div>
         </div>
       </section>
@@ -1140,11 +1179,27 @@ function itemsCost(items) {
 }
 const money = c => (c.est ? '≈ ' : '') + gbp(c.total);
 
+/* ================= Pocket money: data ================= */
+// Weekly commitments: tick chores, homework and a good attitude every day.
+// All 21 boxes earns the reward; savings earn 10% a month.
+const PK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const PK_TASKS = [['chores', '🧹', 'Chores'], ['homework', '📚', 'Homework'], ['attitude', '😊', 'Good attitude']];
+const PK_REWARD = 10, PK_RATE = 0.10;
+function pkFix(p) {
+  p = p && typeof p === 'object' && !Array.isArray(p) ? p : {};
+  const o = { name: String(p.name ?? ''), savings: String(p.savings ?? ''), days: {} };
+  for (const d of PK_DAYS) {
+    const src = (p.days && p.days[d]) || {};
+    o.days[d] = Object.fromEntries(PK_TASKS.map(([k]) => [k, !!src[k]]));
+  }
+  return o;
+}
+
 /* ================= State ================= */
 const DEFAULT_STAPLES = ['Salt', 'Black pepper', 'Pepper', 'Water', 'Olive oil', 'Vegetable oil', 'Sunflower oil'];
 function blank() {
   const list = { id: uid(), name: 'Shopping', items: [], created: Date.now() };
-  return { v: 1, lists: [list], active: list.id, containers: [], recipes: [], meals: [], catalog: {}, trips: [], stock: {},
+  return { v: 1, lists: [list], active: list.id, containers: [], recipes: [], meals: [], catalog: {}, trips: [], stock: {}, pocket: pkFix(),
     settings: { theme: 'auto', groupBy: 'aisle', staples: DEFAULT_STAPLES.slice(), prices: 'std', tubeGarlic: true } };
 }
 function fix(s) {
@@ -1154,6 +1209,7 @@ function fix(s) {
   for (const k of ['lists', 'containers', 'recipes', 'meals', 'trips']) if (!Array.isArray(o[k])) o[k] = [];
   if (!o.catalog || typeof o.catalog !== 'object') o.catalog = {};
   if (!o.stock || typeof o.stock !== 'object' || Array.isArray(o.stock)) o.stock = {};
+  o.pocket = pkFix(o.pocket);
   if (!o.lists.length) o.lists = blank().lists;
   for (const l of o.lists) { l.items = Array.isArray(l.items) ? l.items : []; for (const i of l.items) i.srcs = Array.isArray(i.srcs) ? i.srcs : []; }
   if (!o.lists.some(l => l.id === o.active)) o.active = o.lists[0].id;
@@ -1676,6 +1732,7 @@ const VIEWS = {
   containers: ['Containers', 'Groups of items you buy together'],
   recipes: ['Recipes', 'Import recipes from Claude and shop for the ingredients'],
   history: ['History', 'What you buy, and when'],
+  pocket: ['Pocket money', 'Chores, homework and a good attitude, every day'],
   settings: ['Settings', 'Sharing, theme, staples and backups'],
 };
 let view = 'lists';
@@ -1699,7 +1756,7 @@ function render() {
   $('viewTitle').textContent = view === 'lists' ? cur().name : title;
   $('viewSub').textContent = sub;
   renderChip();
-  ({ lists: renderLists, plan: renderPlan, containers: renderContainers, recipes: renderRecipes, history: renderHistory, settings: renderSettings })[view]();
+  ({ lists: renderLists, plan: renderPlan, containers: renderContainers, recipes: renderRecipes, history: renderHistory, pocket: renderPocket, settings: renderSettings })[view]();
 }
 function renderChip() {
   const l = cur(), left = l.items.filter(i => !i.done).length;
@@ -3431,6 +3488,64 @@ $('v-history').addEventListener('click', e => {
     ...(trip.missed || []).map(i => ({ name: i.name, ...parseQtyOnly(i.qty), cat: i.cat, checked: true, group: 'Didn’t get last time' })),
   ] });
 });
+
+/* ================= Pocket money ================= */
+function pkCount() {
+  const p = S.pocket, total = PK_DAYS.length * PK_TASKS.length;
+  const done = PK_DAYS.reduce((n, d) => n + PK_TASKS.filter(([k]) => p.days[d][k]).length, 0);
+  return { done, total, left: total - done };
+}
+function renderPocket() {
+  const p = S.pocket, { done, total, left } = pkCount(), earned = !left;
+  const today = (new Date().getDay() + 6) % 7;
+  $('pkHero').innerHTML = `
+    <div class="hero-top">
+      <div><div class="eyebrow">${p.name.trim() ? `${esc(p.name.trim())}’s weekly commitments` : 'Weekly commitments'}</div>
+        <div class="hero-net">${earned ? `${gbp(PK_REWARD)}<small>earned</small>` : `${left}<small>${left === 1 ? 'box' : 'boxes'} left</small>`}</div>
+        <div class="hero-meta"><span class="hero-pill">${done}/${total}</span><span>${earned ? `🎉 Amazing! ${gbp(PK_REWARD)} pocket money earned!` : `${left} ${left === 1 ? 'box' : 'boxes'} left to earn ${gbp(PK_REWARD)}`}</span><span>Chores + homework + attitude, every day</span></div></div>
+      <div class="hero-acts">
+        <button class="btn white" data-pk="all">${ico('check')}Tick everything</button>
+        <button class="btn" data-pk="reset">${ico('repeat')}Reset week</button>
+      </div>
+    </div>
+    <div class="gbar" role="progressbar" aria-label="Boxes ticked" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><span style="width:${done / total * 100}%"></span></div>`;
+  $('pkDays').innerHTML = PK_DAYS.map((d, i) => {
+    const n = PK_TASKS.filter(([k]) => p.days[d][k]).length, all = n === PK_TASKS.length;
+    return `<div class="card pk-day${all ? ' done' : ''}${i === today ? ' today' : ''}">
+      <h3>${d}${all ? ' ⭐' : ''}${i === today ? '<span class="badge info">Today</span>' : ''}<span class="sub">${n}/${PK_TASKS.length}</span></h3>
+      ${PK_TASKS.map(([k, emoji, label]) => `<div class="item${p.days[d][k] ? ' done' : ''}" data-day="${d}" data-task="${k}" role="checkbox" aria-checked="${p.days[d][k]}" tabindex="0">
+        <span class="tick">${ico('check')}</span><div class="ibody"><b>${emoji} ${label}</b></div></div>`).join('')}
+    </div>`;
+  }).join('');
+  if (document.activeElement !== $('pkName')) $('pkName').value = p.name;
+  if (document.activeElement !== $('pkSavings')) $('pkSavings').value = p.savings;
+  pkMoney();
+}
+function pkMoney() {
+  const savings = Number(S.pocket.savings) || 0, interest = savings * PK_RATE;
+  $('pkInterest').textContent = gbp(interest);
+  $('pkTotal').textContent = gbp(savings + interest);
+}
+function pkToggle(el) {
+  const day = S.pocket.days[el.dataset.day], k = el.dataset.task;
+  day[k] = !day[k];
+  save(); renderPocket();
+  if (day[k] && !pkCount().left) toast(`🎉 Amazing! ${gbp(PK_REWARD)} pocket money earned!`);
+}
+$('pkDays').addEventListener('click', e => { const it = e.target.closest('[data-task]'); if (it) pkToggle(it); });
+$('pkDays').addEventListener('keydown', e => {
+  const it = e.target.closest('[data-task]');
+  if (it && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pkToggle(it); const again = $('pkDays').querySelector(`[data-day="${it.dataset.day}"][data-task="${it.dataset.task}"]`); again && again.focus(); }
+});
+const pkSetAll = on => { for (const d of PK_DAYS) for (const [k] of PK_TASKS) S.pocket.days[d][k] = on; };
+$('pkHero').addEventListener('click', e => {
+  const a = e.target.closest('[data-pk]');
+  if (!a) return;
+  if (a.dataset.pk === 'all') return withUndo('Everything ticked', () => pkSetAll(true));
+  confirmSheet({ title: 'Reset the week?', text: 'Reset all ticks for this week?', ok: 'Reset week', danger: true, onOk: () => withUndo('Week reset', () => pkSetAll(false)) });
+});
+$('pkName').addEventListener('input', () => { S.pocket.name = $('pkName').value; save(); renderPocket(); });
+$('pkSavings').addEventListener('input', () => { S.pocket.savings = $('pkSavings').value; save(); pkMoney(); });
 
 /* ================= Settings ================= */
 const PRICE_NOTES = { budget: 'Prices like Aldi and Lidl.', std: 'Prices like Tesco, Sainsbury’s and Asda.', premium: 'Prices like Waitrose and M&S.', off: 'No estimates — only prices you type in yourself.' };
