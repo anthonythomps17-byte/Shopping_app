@@ -625,10 +625,24 @@ details.trip[open] summary::after{transform:rotate(90deg)}
 .pk-emojis{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .pk-emojis button{font-size:19px;width:40px;height:40px;padding:0;border-radius:11px;border:1px solid var(--border);background:var(--surface-2)}
 .pk-emojis button:hover{border-color:var(--c-pocket)}
+.pk-task.wait{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
+.pk-task.wait .tick,.pk-day .item.wait .tick{background:var(--accent);border-color:var(--accent)}
+.pk-task.wait small{color:var(--accent-ink)}
+.pk-day .item.wait .ibody small{display:block;color:var(--accent-ink);font-weight:700}
+.pk-seg .n{font-family:var(--mono);font-size:10.5px;font-weight:800;background:var(--accent);color:#5c4400;border-radius:999px;padding:0 6px;margin-left:5px}
+.pk-row .em{font-size:22px;flex:none}
+.pk-row .btn{flex:none}
+.pk-lockbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:8px;border-radius:12px;background:var(--surface-3);font-size:13px;font-weight:650;color:var(--text-2)}
+.pk-lockbar .btn{margin-left:auto}
+#v-pocket .hero .btn.lockb{background:rgba(255,255,255,.22);color:#fff}
 #pkConfetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:300}
 @media (max-width:760px){
   .pk-seg{justify-self:stretch}
-  .pk-seg button{flex:1;padding:8px 4px}
+  .pk-seg button{flex:1;padding:8px 2px;font-size:12px}
+  .pk-seg .n{margin-left:3px;padding:0 5px}
+  .pk-row{flex-wrap:wrap}
+  .pk-row .lbl{flex-basis:calc(100% - 40px)}
+  .pk-row .acts{margin-left:auto}
 }
 
 /* ============ Sharing between phones ============ */
@@ -873,7 +887,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
       <section class="view" id="v-pocket">
         <div class="stack">
           <div class="hero" id="pkHero"></div>
-          <div class="seg pk-seg" id="pkSeg" role="tablist"><button data-pt="today">Today</button><button data-pt="week">This week</button><button data-pt="money">Money</button><button data-pt="setup">Set up</button></div>
+          <div class="seg pk-seg" id="pkSeg" role="tablist"><button data-pt="today">Today</button><button data-pt="week">Week</button><button data-pt="check">Check<span class="n" id="pkChkN" hidden></span></button><button data-pt="money">Money</button><button data-pt="setup">Set up</button></div>
           <div id="pkBody"></div>
         </div>
       </section>
@@ -1247,17 +1261,26 @@ function pkChores(a) {
 function pkFix(p) {
   p = p && typeof p === 'object' && !Array.isArray(p) ? p : {};
   const o = { ...p, name: String(p.name ?? ''), savings: String(p.savings ?? ''), weekly: pkNum(p.weekly, 10),
-    mode: p.mode === 'share' ? 'share' : 'all', chores: pkChores(p.chores), weeks: {}, paid: [] };
+    mode: p.mode === 'share' ? 'share' : 'all', chores: pkChores(p.chores), weeks: {}, paid: [],
+    // a parent checks ticks made on the child's phone before they earn anything
+    approve: p.approve !== false,
+    // the parent PIN, hashed (shared between the household's phones)
+    pin: typeof p.pin === 'string' && /^[0-9a-f]{64}$/.test(p.pin) ? p.pin : '' };
+  const flags = x => { const out = {}; for (const [k, v] of Object.entries(x && typeof x === 'object' ? x : {})) if (v === true) out[k] = true; return out; };
   const weeks = p.weeks && typeof p.weeks === 'object' && !Array.isArray(p.weeks) ? p.weeks : {};
   for (const [m, w] of Object.entries(weeks)) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(m) || !w || typeof w !== 'object') continue;
-    const ticks = {};
-    for (const [k, v] of Object.entries(w.ticks && typeof w.ticks === 'object' ? w.ticks : {})) if (v === true) ticks[k] = true;
-    o.weeks[m] = { ...w, pay: pkNum(w.pay, o.weekly), mode: w.mode === 'share' ? 'share' : 'all', chores: pkChores(w.chores), ticks };
+    o.weeks[m] = { ...w, pay: pkNum(w.pay, o.weekly), mode: w.mode === 'share' ? 'share' : 'all', chores: pkChores(w.chores), ticks: flags(w.ticks), ok: flags(w.ok) };
   }
   if (Array.isArray(p.paid)) o.paid = p.paid.filter(x => x && typeof x === 'object' && x.id).map(x => ({ ...x, amt: pkNum(x.amt, 0), at: Number(x.at) || 0 }));
   return o;
 }
+// Whether this is the child's phone is kept on the phone itself, not shared. On it,
+// the parent bits need the PIN, which unlocks them for a few minutes.
+let pkKid = false;
+try { pkKid = localStorage.getItem('shop_kid') === '1'; } catch {}
+let pkUntil = 0, pkLockT;
+const pkParent = () => !pkKid || !S.pocket.pin || Date.now() < pkUntil;
 
 /* ================= State ================= */
 const DEFAULT_STAPLES = ['Salt', 'Black pepper', 'Pepper', 'Water', 'Olive oil', 'Vegetable oil', 'Sunflower oil'];
@@ -1801,7 +1824,9 @@ const VIEWS = {
 };
 let view = 'lists';
 try { const v = localStorage.getItem('shop_view'); if (VIEWS[v]) view = v; } catch {}
+if (view === 'settings' && !pkParent()) view = 'pocket';
 function setView(v) {
+  if (v === 'settings' && !pkParent()) return pkAsk(() => setView('settings'), 'Settings are for parents. Enter the PIN');
   view = v;
   try { localStorage.setItem('shop_view', v); } catch {}
   render();
@@ -3561,17 +3586,86 @@ const pkPot = n => n < 0 ? `−${gbp(-n)}` : gbp(n);
 // A week's record, or (if nothing's been ticked yet) how it would look with today's set-up
 function pkWeek(monday, create) {
   const P = S.pocket;
-  if (!P.weeks[monday] && create) P.weeks[monday] = { pay: P.weekly, mode: P.mode, chores: JSON.parse(JSON.stringify(P.chores)), ticks: {} };
-  return P.weeks[monday] || { pay: P.weekly, mode: P.mode, chores: P.chores, ticks: {} };
+  if (!P.weeks[monday] && create) P.weeks[monday] = { pay: P.weekly, mode: P.mode, chores: JSON.parse(JSON.stringify(P.chores)), ticks: {}, ok: {} };
+  return P.weeks[monday] || { pay: P.weekly, mode: P.mode, chores: P.chores, ticks: {}, ok: {} };
+}
+// A tick counts towards the money once a parent has OK'd it (or straight away if checking is off)
+const pkOk = (w, k) => !!w.ticks[k] && (!S.pocket.approve || !!(w.ok && w.ok[k]));
+function pkPending() {
+  const out = [];
+  if (!S.pocket.approve) return out;
+  for (const [m, w] of Object.entries(S.pocket.weeks)) for (const d of PK_ALL) for (const c of w.chores) {
+    const k = `${d}:${c.id}`;
+    if (c.days.includes(d) && w.ticks[k] && !pkOk(w, k)) out.push({ m, d, c, k, date: addDays(m, d) });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/* ---- parent PIN ---- */
+async function pkHash(pin) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('shopping-pocket-pin:' + pin));
+  return Array.from(new Uint8Array(b), x => x.toString(16).padStart(2, '0')).join('');
+}
+let pkTries = 0, pkWait = 0;
+function pkAsk(then, why = 'Enter the parent PIN') {
+  if (pkParent()) return then();
+  openSheet({
+    title: '🔒 Parent PIN',
+    body: `<form id="pinForm" class="field" style="margin-top:6px"><label for="pinIn">${esc(why)}</label><input class="input" id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="font-family:var(--mono);font-size:22px;letter-spacing:.3em;text-align:center" autofocus></form>`,
+    foot: `<div class="actions"><button class="btn" data-close>Cancel</button><button class="btn solid" id="pinOk">Unlock</button></div>`,
+    mount: () => {
+      const go = async e => {
+        e && e.preventDefault();
+        if (Date.now() < pkWait) return toast(`Too many tries. Wait ${Math.ceil((pkWait - Date.now()) / 1000)} seconds`, { err: true });
+        const v = $('pinIn').value.trim();
+        if (!v) return $('pinIn').focus();
+        if (await pkHash(v) !== S.pocket.pin) {
+          if (++pkTries >= 5) { pkWait = Date.now() + 30e3; pkTries = 0; }
+          $('pinIn').value = ''; $('pinIn').focus();
+          return toast('That’s not the PIN', { err: true });
+        }
+        pkTries = 0; closeSheet(); pkUnlock(); then();
+      };
+      $('pinForm').onsubmit = go; $('pinOk').onclick = go;
+      if (!matchMedia('(pointer:fine)').matches) setTimeout(() => { if ($('pinIn')) $('pinIn').focus(); }, 60);
+    },
+  });
+}
+function pkUnlock() { pkUntil = Date.now() + 10 * 60e3; clearTimeout(pkLockT); pkLockT = setTimeout(pkLock, 10 * 60e3 + 50); render(); }
+function pkLock() { pkUntil = 0; clearTimeout(pkLockT); if (view === 'settings') setView('pocket'); else render(); }
+function pkPinSheet() {
+  openSheet({
+    title: S.pocket.pin ? 'Change the parent PIN' : 'Set a parent PIN',
+    body: `<form id="npForm" class="fgrid" style="margin-top:6px">
+      <div class="field"><label for="np1">New PIN (4 to 8 numbers)</label><input class="input" id="np1" type="password" inputmode="numeric" autocomplete="off" maxlength="8" autofocus></div>
+      <div class="field"><label for="np2">Same again</label><input class="input" id="np2" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></div></form>
+      <p class="note">It’s for every phone in the household. Keep it to the grown-ups.</p>`,
+    foot: `<div class="actions"><button class="btn" data-close>Cancel</button><button class="btn solid" id="npOk">Save PIN</button></div>`,
+    mount: () => {
+      const go = async e => {
+        e && e.preventDefault();
+        const a = $('np1').value.trim(), b = $('np2').value.trim();
+        if (!/^\d{4,8}$/.test(a)) { $('np1').focus(); return toast('Use 4 to 8 numbers', { err: true }); }
+        if (a !== b) { $('np2').value = ''; $('np2').focus(); return toast('The two PINs don’t match', { err: true }); }
+        S.pocket.pin = await pkHash(a);
+        closeSheet(); save(); renderPocket(); toast('Parent PIN saved');
+      };
+      $('npForm').onsubmit = go; $('npOk').onclick = go;
+      $('np2').addEventListener('keydown', e => { if (e.key === 'Enter') go(e); });
+    },
+  });
 }
 function pkStats(w) {
   const days = PK_ALL.map(d => {
-    const cs = w.chores.filter(c => c.days.includes(d)), done = cs.filter(c => w.ticks[`${d}:${c.id}`]).length;
-    return { cs, total: cs.length, done, full: cs.length > 0 && done === cs.length };
+    const cs = w.chores.filter(c => c.days.includes(d));
+    const done = cs.filter(c => w.ticks[`${d}:${c.id}`]).length, okd = cs.filter(c => pkOk(w, `${d}:${c.id}`)).length;
+    return { cs, total: cs.length, done, okd, full: cs.length > 0 && done === cs.length };
   });
-  const total = days.reduce((a, x) => a + x.total, 0), done = days.reduce((a, x) => a + x.done, 0);
-  const earned = !total ? 0 : w.mode === 'share' ? Math.round(w.pay * done / total * 100) / 100 : done === total ? w.pay : 0;
-  return { days, total, done, left: total - done, earned, full: total > 0 && done === total, stars: days.filter(x => x.full).length };
+  const sum = f => days.reduce((a, x) => a + x[f], 0), total = sum('total'), done = sum('done'), okd = sum('okd');
+  // money only counts ticks a parent has OK'd
+  const earned = !total ? 0 : w.mode === 'share' ? Math.round(w.pay * okd / total * 100) / 100 : okd === total ? w.pay : 0;
+  return { days, total, done, okd, pending: done - okd, left: total - done, earned,
+    full: total > 0 && done === total, paidFull: total > 0 && okd === total, stars: days.filter(x => x.full).length };
 }
 function pkTotals() {
   const P = S.pocket;
@@ -3635,7 +3729,7 @@ const PK_CHEERS = ['Nice one! 👍', 'Great job! 🙌', 'Ticked off! ✅', 'Smas
 
 /* ---- screens ---- */
 let pkTab = 'today', pkWeekOff = 0;
-try { const t = localStorage.getItem('shop_pktab'); if (['today', 'week', 'money', 'setup'].includes(t)) pkTab = t; } catch {}
+try { const t = localStorage.getItem('shop_pktab'); if (['today', 'week', 'check', 'money', 'setup'].includes(t)) pkTab = t; } catch {}
 function pkBadge() {
   const day = pkStats(pkWeek(pkMonday())).days[pkDayIdx(todayIso())], left = day.total - day.done;
   $('pkCnt').hidden = !left || view === 'pocket';
@@ -3643,25 +3737,29 @@ function pkBadge() {
 }
 function pkHero() {
   const P = S.pocket, w = pkWeek(pkMonday()), st = pkStats(w), tot = pkTotals(), streak = pkStreak(), name = P.name.trim();
+  const pend = pkPending().length;
   const msg = !st.total ? 'Add some chores in Set up to get started'
-    : st.full ? (w.mode === 'all' ? `🎉 Amazing! ${gbp(w.pay)} pocket money earned!` : `🎉 Every box ticked! ${gbp(st.earned)} earned`)
+    : st.paidFull ? (w.mode === 'all' ? `🎉 Amazing! ${gbp(w.pay)} pocket money earned!` : `🎉 Every box ticked! ${gbp(st.earned)} earned`)
+    : st.full ? `🎉 Every box ticked! Waiting for a parent’s OK`
     : w.mode === 'all' ? `${st.left} ${st.left === 1 ? 'box' : 'boxes'} left to earn ${gbp(w.pay)}`
     : `${gbp(st.earned)} earned so far, up to ${gbp(w.pay)}`;
   $('pkHero').innerHTML = `
     <div class="hero-top"><div>
       <div class="eyebrow">${name ? `${esc(name)}’s pocket money` : 'Pocket money'}</div>
       <div class="hero-net">${pkPot(tot.owed)}<small>${tot.owed < 0 ? 'paid ahead' : 'in the pot'}</small></div>
-      <div class="hero-meta"><span class="hero-pill">${st.done}/${st.total} this week</span>${streak ? `<span class="hero-pill">🔥 ${plural(streak, 'day')}</span>` : ''}<span class="hero-pill">⭐ ${tot.stars}</span><span>${msg}</span></div>
-    </div></div>
+      <div class="hero-meta"><span class="hero-pill">${st.done}/${st.total} this week</span>${streak ? `<span class="hero-pill">🔥 ${plural(streak, 'day')}</span>` : ''}<span class="hero-pill">⭐ ${tot.stars}</span><span>${msg}</span>${pend && !st.full ? `<span>⏳ ${pend} waiting for a parent’s OK</span>` : ''}</div>
+    </div>${pkKid && S.pocket.pin ? `<div class="hero-acts">${pkParent() ? `<button class="btn lockb" data-pk="lock" title="Parent bits are unlocked">🔓 Lock</button>` : `<button class="btn lockb" data-pk="unlock">🔒 Parent</button>`}</div>` : ''}</div>
     <div class="gbar" role="progressbar" aria-label="This week’s boxes ticked" aria-valuemin="0" aria-valuemax="${st.total}" aria-valuenow="${st.done}"><span style="width:${st.total ? st.done / st.total * 100 : 0}%"></span></div>`;
 }
 function renderPocket() {
   pkHero();
   document.querySelectorAll('#pkSeg button').forEach(b => { b.classList.toggle('on', b.dataset.pt === pkTab); b.setAttribute('aria-selected', b.dataset.pt === pkTab); });
+  const pend = pkPending().length;
+  $('pkChkN').hidden = !pend; $('pkChkN').textContent = pend;
   // don't redraw under someone who's typing (sharing can re-render at any moment)
   const a = document.activeElement;
   if (a && $('pkBody').contains(a) && a.tagName === 'INPUT') return;
-  $('pkBody').innerHTML = ({ today: pkTodayHtml, week: pkWeekHtml, money: pkMoneyHtml, setup: pkSetupHtml })[pkTab]();
+  $('pkBody').innerHTML = ({ today: pkTodayHtml, week: pkWeekHtml, check: pkCheckHtml, money: pkMoneyHtml, setup: pkSetupHtml })[pkTab]();
   if (pkTab === 'money') pkMoney();
 }
 const pkTick = (m, d, c, on) => `data-m="${m}" data-d="${d}" data-cid="${esc(c.id)}" role="checkbox" aria-checked="${!!on}" tabindex="0"`;
@@ -3672,9 +3770,9 @@ function pkTodayHtml() {
   const streak = pkStreak();
   return `<div class="card">
     <h3>Today · ${PK_DAYS[d]}<span class="sub">${day.done}/${day.total} done</span></h3>
-    ${day.cs.map(c => { const on = w.ticks[`${d}:${c.id}`]; return `<div class="pk-task pk-t${on ? ' done' : ''}" ${pkTick(m, d, c, on)}>
-      <span class="tick">${ico('check')}</span><span class="emo">${esc(c.emoji || '⭐')}</span><b>${esc(c.name || 'Chore')}</b>${on ? '<small>Done!</small>' : ''}</div>`; }).join('')}
-    ${day.full ? `<div class="pk-win"><div class="pk-big">⭐</div><b>All done for today!</b><span>That’s a star${streak > 1 ? ` and a ${streak}-day streak 🔥` : ''}</span></div>` : ''}
+    ${day.cs.map(c => { const k = `${d}:${c.id}`, on = w.ticks[k], wait = on && !pkOk(w, k); return `<div class="pk-task pk-t${on ? ' done' : ''}${wait ? ' wait' : ''}" ${pkTick(m, d, c, on)}>
+      <span class="tick">${ico('check')}</span><span class="emo">${esc(c.emoji || '⭐')}</span><b>${esc(c.name || 'Chore')}</b>${wait ? '<small>Waiting for OK</small>' : on ? '<small>Done!</small>' : ''}</div>`; }).join('')}
+    ${day.full ? `<div class="pk-win"><div class="pk-big">⭐</div><b>All done for today!</b><span>That’s a star${streak > 1 ? ` and a ${streak}-day streak 🔥` : ''}${day.okd < day.total ? ' · a parent will check them' : ''}</span></div>` : ''}
   </div>`;
 }
 function pkWeekHtml() {
@@ -3683,7 +3781,7 @@ function pkWeekHtml() {
   return `<div class="stack">
     <div class="card pk-wbar">
       <button class="iconbtn" data-pk="prev" title="Week before" aria-label="Week before">${ico('chevl')}</button>
-      <div class="wt"><b>${title}</b><small>${st.done}/${st.total} boxes · ${gbp(st.earned)} earned</small></div>
+      <div class="wt"><b>${title}</b><small>${st.done}/${st.total} boxes · ${gbp(st.earned)} earned${st.pending ? ` · ${st.pending} to check` : ''}</small></div>
       <button class="iconbtn" data-pk="next" title="Week after" aria-label="Week after"${pkWeekOff >= 0 ? ' disabled' : ''}>${ico('chevr')}</button>
       <div class="actions"><button class="btn sm" data-pk="all" data-wk="${m}">${ico('check')}Tick everything</button><button class="btn sm danger" data-pk="reset" data-wk="${m}">${ico('repeat')}Reset week</button></div>
     </div>
@@ -3691,9 +3789,21 @@ function pkWeekHtml() {
       const date = addDays(m, d), day = st.days[d];
       return `<div class="card pk-day${day.full ? ' done' : ''}${date === today ? ' today' : ''}">
         <h3>${PK_DAYS[d]}${day.full ? ' ⭐' : ''}${date === today ? '<span class="badge info">Today</span>' : ''}<span class="sub">${day.total ? `${day.done}/${day.total}` : ''}</span></h3>
-        ${day.total ? day.cs.map(c => { const on = w.ticks[`${d}:${c.id}`]; return `<div class="item pk-t${on ? ' done' : ''}" ${pkTick(m, d, c, on)}><span class="tick">${ico('check')}</span><div class="ibody"><b>${esc(c.emoji || '⭐')} ${esc(c.name || 'Chore')}</b></div></div>`; }).join('') : '<p class="off">🎈 Day off</p>'}
+        ${day.total ? day.cs.map(c => { const k = `${d}:${c.id}`, on = w.ticks[k], wait = on && !pkOk(w, k); return `<div class="item pk-t${on ? ' done' : ''}${wait ? ' wait' : ''}" ${pkTick(m, d, c, on)}><span class="tick">${ico('check')}</span><div class="ibody"><b>${esc(c.emoji || '⭐')} ${esc(c.name || 'Chore')}</b>${wait ? '<small>Waiting for OK</small>' : ''}</div></div>`; }).join('') : '<p class="off">🎈 Day off</p>'}
       </div>`;
     }).join('')}</div>
+  </div>`;
+}
+function pkCheckHtml() {
+  const list = pkPending(), parent = pkParent(), name = S.pocket.name.trim() || 'your child';
+  if (!S.pocket.approve) return `<div class="card pk-off"><div class="pk-big">✅</div><b>Ticks count straight away</b><p>Turn on “Parent checks ticks” in Set up to OK them before the money goes in the pot.</p></div>`;
+  if (!list.length) return `<div class="card pk-off"><div class="pk-big">👍</div><b>Nothing to check</b><p>When ${esc(name)} ticks something off on their phone, it waits here for your OK before the money goes in the pot.</p></div>`;
+  return `<div class="card">
+    <h3>Waiting for a parent’s OK<span class="sub">${list.length}</span></h3>
+    ${parent ? '' : `<div class="pk-lockbar">🔒 Only a parent can OK these.<button class="btn sm solid" data-pk="unlock">Unlock</button></div>`}
+    ${list.map(it => `<div class="pk-row"><span class="em">${esc(it.c.emoji || '⭐')}</span><span class="lbl">${esc(it.c.name || 'Chore')}<small>${esc(dayLabel(it.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</small></span>
+      ${parent ? `<span class="actions acts"><button class="btn sm" data-ap="no" data-m="${it.m}" data-k="${esc(it.k)}">${ico('x')}Not done</button><button class="btn sm solid" data-ap="yes" data-m="${it.m}" data-k="${esc(it.k)}">${ico('check')}OK</button></span>` : '<span class="badge open">Waiting</span>'}</div>`).join('')}
+    ${parent && list.length > 1 ? `<div class="actions" style="margin-top:12px"><button class="btn solid" data-ap="all">${ico('check')}OK all ${list.length}</button></div>` : ''}
   </div>`;
 }
 function pkMoneyHtml() {
@@ -3712,7 +3822,7 @@ function pkMoneyHtml() {
     <div class="grid2">
       <div class="card">
         <h3>History</h3>
-        <div class="actions" style="margin-bottom:10px"><button class="btn solid" data-pk="pay">${ico('coin')}Pay out</button></div>
+        <div class="actions" style="margin-bottom:10px"><button class="btn solid" data-pk="pay">${pkParent() ? ico('coin') : '🔒 '}Pay out</button></div>
         ${rows.map(r => r.pay
           ? `<div class="pk-row"><span>💷</span><span class="lbl">Paid out<small>${esc(fmtDate(r.at))}</small></span><span class="amt minus">−${gbp(r.pay.amt)}</span><button class="tact del" data-pk="unpay" data-id="${esc(r.pay.id)}" title="Remove" aria-label="Remove this payment">${ico('trash')}</button></div>`
           : `<div class="pk-row"><span>${r.st.full ? '⭐' : '🗓️'}</span><span class="lbl">Week of ${esc(dayLabel(r.m, { day: 'numeric', month: 'short' }))}<small>${r.st.done}/${r.st.total} boxes${r.st.full ? ' · every box ticked' : ''}</small></span><span class="amt ${r.st.earned ? 'plus' : 'zero'}">+${gbp(r.st.earned)}</span></div>`).join('')
@@ -3720,7 +3830,7 @@ function pkMoneyHtml() {
       </div>
       <div class="card">
         <h3>Savings</h3>
-        <div class="field"><label for="pkSavings">Savings balance</label><div class="money"><input class="input" id="pkSavings" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" value="${esc(P.savings)}"></div></div>
+        <div class="field"><label for="pkSavings">Savings balance</label><div class="money"><input class="input" id="pkSavings" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" value="${esc(P.savings)}"${pkParent() ? '' : ' readonly title="A parent can change this"'}></div></div>
         <div class="tiles" style="margin-top:14px">
           <div class="tile"><div class="eyebrow">10% monthly interest</div><b id="pkInterest">£0.00</b></div>
           <div class="tile"><div class="eyebrow">After interest</div><b id="pkTotal">£0.00</b></div>
@@ -3732,15 +3842,25 @@ function pkMoneyHtml() {
 }
 const PK_EMOJIS = ['🧹', '🛏️', '🍽️', '🧺', '🗑️', '🦷', '📚', '🎒', '🐶', '🐦', '🌱', '🎹', '🏃', '🧸', '😊', '⭐'];
 function pkSetupHtml() {
-  const P = S.pocket;
+  const P = S.pocket, who = P.name.trim() || 'Child';
+  if (!pkParent()) return `<div class="card pk-off"><div class="pk-big">🔒</div><b>For parents</b><p>Enter the PIN to change chores and pocket money.</p><button class="btn solid" data-pk="unlock" style="margin-top:14px">Unlock</button></div>`;
   return `<div class="grid2">
-    <div class="card">
+    <div class="stack"><div class="card">
       <h3>Pocket money</h3>
       <div class="field"><label for="pkName">Name</label><input class="input" id="pkName" placeholder="Enter name" autocomplete="off" autocapitalize="words" value="${esc(P.name)}"></div>
       <div class="field" style="margin-top:12px"><label for="pkWeekly">Earned each week</label><div class="money"><input class="input" id="pkWeekly" type="number" min="0" step="0.5" inputmode="decimal" value="${P.weekly}"></div></div>
       <div class="field" style="margin-top:12px"><span class="flabel">How it’s earned</span><div class="seg" id="pkMode"><button data-mode="all" class="${P.mode === 'all' ? 'on' : ''}">Every box ticked</button><button data-mode="share" class="${P.mode === 'share' ? 'on' : ''}">A share per box</button></div></div>
       <p class="note">${P.mode === 'all' ? `Every box in the week has to be ticked to earn the ${gbp(P.weekly)}.` : `Each box ticked earns its share of the ${gbp(P.weekly)}, so a nearly-done week still earns most of it.`} Changes count from this week; past weeks keep what they earned.</p>
     </div>
+    <div class="card">
+      <h3>Parent controls</h3>
+      <div class="field"><span class="flabel">Parent PIN</span>
+        <div class="actions">${P.pin ? `<span class="badge done">PIN is set</span><button class="btn sm" data-pk="pin-set">Change</button><button class="btn sm danger" data-pk="pin-remove">Remove</button>` : `<button class="btn solid" data-pk="pin-set">Set a PIN</button>`}</div></div>
+      <div class="field" style="margin-top:14px"><span class="flabel">Parent checks ticks</span><div class="seg" id="pkAppr"><button data-appr="1" class="${P.approve ? 'on' : ''}">On</button><button data-appr="0" class="${P.approve ? '' : 'on'}">Off</button></div></div>
+      <p class="note">${P.approve ? `Ticks made on ${esc(who)}’s phone wait in <b>Check</b> for your OK before the money goes in the pot. Ticks made on a parent’s phone count straight away.` : 'Every tick counts towards the money straight away.'}</p>
+      <div class="field" style="margin-top:14px"><span class="flabel">This phone</span><div class="seg" id="pkKidSeg"><button data-kid="0" class="${pkKid ? '' : 'on'}">A parent’s</button><button data-kid="1" class="${pkKid ? 'on' : ''}">${esc(who)}’s</button></div></div>
+      <p class="note">On ${esc(who)}’s phone, Set up, Pay out, checking ticks, Tick everything, Reset week and the app’s Settings need the PIN.${P.pin ? '' : ' Set a PIN first.'}</p>
+    </div></div>
     <div class="card">
       <h3>Chores <span class="sub">${P.chores.length}</span></h3>
       ${P.chores.map(c => `<div class="pk-chore" data-ed="${esc(c.id)}">
@@ -3774,25 +3894,56 @@ function pkApply() {
 /* ---- actions ---- */
 function pkToggle(el) {
   const m = el.dataset.m, d = +el.dataset.d, cid = el.dataset.cid, k = `${d}:${cid}`;
+  if (pkWeek(m).ticks[k] && pkOk(pkWeek(m), k) && S.pocket.approve && !pkParent()) return pkAsk(() => pkToggle(el), 'A parent has OK’d this one. Enter the PIN to change it');
   const r = el.getBoundingClientRect(), focused = el === document.activeElement, w = pkWeek(m, true), before = pkStats(w);
-  if (w.ticks[k]) delete w.ticks[k]; else w.ticks[k] = true;
+  if (w.ticks[k]) { delete w.ticks[k]; delete w.ok[k]; }
+  else { w.ticks[k] = true; if (pkParent()) w.ok[k] = true; }
   const on = !!w.ticks[k], after = pkStats(w);
   save(); renderPocket(); pkBadge();
   const again = $('pkBody').querySelector(`[data-m="${m}"][data-d="${d}"][data-cid="${CSS.escape(cid)}"]`);
   if (again) { if (focused) again.focus(); if (on) again.classList.add('pk-pop'); }
   if (!on) return;
-  if (after.full && !before.full) {
+  if (after.paidFull && !before.paidFull) {
     pkParty();
     toast(w.mode === 'all' ? `🎉 Amazing! ${gbp(w.pay)} pocket money earned!` : `🎉 Every box ticked! ${gbp(after.earned)} earned this week!`);
+  } else if (after.full && !before.full) {
+    pkParty();
+    toast(`🎉 Every box ticked! Once a parent OKs them, ${w.mode === 'all' ? gbp(w.pay) : 'the money'} goes in the pot`);
   } else if (after.days[d].full && !before.days[d].full) {
     pkConfetti(innerWidth / 2, innerHeight * .75, 90, 1.5);
     const streak = m === pkMonday() ? pkStreak() : 0;
-    toast(`⭐ ${PK_DAYS[d]} done! That’s a star${streak > 1 ? ` · ${streak}-day streak 🔥` : ''}`);
+    toast(`⭐ ${PK_DAYS[d]} done! That’s a star${streak > 1 ? ` · ${streak}-day streak 🔥` : ''}${after.days[d].okd < after.days[d].total ? '. Waiting for a parent’s OK' : ''}`);
   } else {
     pkConfetti(r.left + 34, r.top + r.height / 2, 28, .9);
     toast(PK_CHEERS[Math.floor(Math.random() * PK_CHEERS.length)]);
   }
 }
+// OK (or send back) ticks from the child's phone
+function pkApprove(items, yes) {
+  pkAsk(() => {
+    const snap = JSON.stringify(S), potBefore = pkTotals().owed;
+    const fullBefore = new Set(Object.entries(S.pocket.weeks).filter(([, w]) => pkStats(w).paidFull).map(([m]) => m));
+    for (const it of items) {
+      const w = S.pocket.weeks[it.m];
+      if (!w) continue;
+      if (yes) w.ok[it.k] = true; else { delete w.ticks[it.k]; delete w.ok[it.k]; }
+    }
+    const after = JSON.stringify(S), gained = Math.round((pkTotals().owed - potBefore) * 100) / 100;
+    const newlyFull = Object.entries(S.pocket.weeks).some(([m, w]) => !fullBefore.has(m) && pkStats(w).paidFull);
+    save(); render();
+    const n = items.length;
+    toast(yes ? `✅ ${n === 1 ? 'OK’d' : `${n} OK’d`}${gained > 0 ? ` · ${gbp(gained)} into the pot!` : ''}` : `Sent back: ${n === 1 ? items[0].c.name : plural(n, 'tick')} not done`,
+      { undo: () => undoTo(snap, after) });
+    if (yes && newlyFull) pkParty();
+    else if (yes && gained > 0) pkConfetti(innerWidth / 2, innerHeight * .8, 60, 1.3);
+  }, 'Only a parent can OK ticks. Enter the PIN');
+}
+$('pkHero').addEventListener('click', e => {
+  const a = e.target.closest('[data-pk]');
+  if (!a) return;
+  if (a.dataset.pk === 'lock') { pkLock(); toast('Locked'); }
+  if (a.dataset.pk === 'unlock') pkAsk(() => toast('🔓 Unlocked for 10 minutes'));
+});
 $('pkSeg').onclick = e => {
   const b = e.target.closest('[data-pt]');
   if (!b) return;
@@ -3804,6 +3955,24 @@ $('pkBody').addEventListener('click', e => {
   const t = e.target.closest('.pk-t');
   if (t) return pkToggle(t);
   const P = S.pocket;
+  const ap = e.target.closest('[data-ap]');
+  if (ap) {
+    const all = pkPending();
+    return pkApprove(ap.dataset.ap === 'all' ? all : all.filter(x => x.m === ap.dataset.m && x.k === ap.dataset.k), ap.dataset.ap !== 'no');
+  }
+  const appr = e.target.closest('[data-appr]');
+  if (appr) { P.approve = appr.dataset.appr === '1'; save(); return render(); }
+  const kid = e.target.closest('[data-kid]');
+  if (kid) {
+    if (kid.dataset.kid === '1') {
+      if (!P.pin) return toast('Set a parent PIN first', { err: true });
+      return confirmSheet({ title: `Make this ${P.name.trim() || 'your child'}’s phone?`, ok: 'Yes, lock it',
+        text: 'Set up, Pay out, checking ticks and the app’s Settings will need the parent PIN on this phone. Their ticks wait for a parent’s OK.',
+        onOk: () => { pkKid = true; try { localStorage.setItem('shop_kid', '1'); } catch {} pkTab = 'today'; try { localStorage.setItem('shop_pktab', pkTab); } catch {} pkLock(); toast('Done. Parent bits now need the PIN on this phone'); } });
+    }
+    pkKid = false; try { localStorage.removeItem('shop_kid'); } catch {}
+    return renderPocket();
+  }
   const emo = e.target.closest('[data-emo]');
   if (emo) { $('pkNewEmo').value = emo.dataset.emo; return $('pkNewName').focus(); }
   const mode = e.target.closest('[data-mode]');
@@ -3820,28 +3989,32 @@ $('pkBody').addEventListener('click', e => {
   const a = e.target.closest('[data-pk]');
   if (!a) return;
   const act = a.dataset.pk;
+  if (act === 'unlock') return pkAsk(() => toast('🔓 Unlocked for 10 minutes'));
+  if (act === 'pin-set') return pkPinSheet();
+  if (act === 'pin-remove') return confirmSheet({ title: 'Remove the parent PIN?', ok: 'Remove PIN', danger: true,
+    text: 'Anyone will be able to change chores, pay out and OK ticks, on every phone.', onOk: () => { P.pin = ''; save(); renderPocket(); toast('PIN removed'); } });
   if (act === 'setup') { pkTab = 'setup'; try { localStorage.setItem('shop_pktab', pkTab); } catch {} return renderPocket(); }
   if (act === 'prev' || act === 'next') { pkWeekOff = Math.min(0, pkWeekOff + (act === 'next' ? 1 : -1)); return renderPocket(); }
-  if (act === 'all') {
+  if (act === 'all') return pkAsk(() => {
     const m = a.dataset.wk, before = pkStats(pkWeek(m));
-    withUndo('Everything ticked', () => { const w = pkWeek(m, true); for (const d of PK_ALL) for (const c of w.chores) if (c.days.includes(d)) w.ticks[`${d}:${c.id}`] = true; });
-    if (!before.full && pkStats(pkWeek(m)).full) pkParty();
-    return pkBadge();
-  }
+    withUndo('Everything ticked', () => { const w = pkWeek(m, true); for (const d of PK_ALL) for (const c of w.chores) if (c.days.includes(d)) w.ticks[`${d}:${c.id}`] = w.ok[`${d}:${c.id}`] = true; });
+    if (!before.paidFull && pkStats(pkWeek(m)).paidFull) pkParty();
+    pkBadge();
+  });
   if (act === 'reset') {
     const m = a.dataset.wk;
-    return confirmSheet({ title: 'Reset the week?', text: 'Reset all ticks for this week?', ok: 'Reset week', danger: true,
-      onOk: () => { withUndo('Week reset', () => { if (P.weeks[m]) P.weeks[m].ticks = {}; }); pkBadge(); } });
+    return pkAsk(() => confirmSheet({ title: 'Reset the week?', text: 'Reset all ticks for this week?', ok: 'Reset week', danger: true,
+      onOk: () => { withUndo('Week reset', () => { if (P.weeks[m]) { P.weeks[m].ticks = {}; P.weeks[m].ok = {}; } }); pkBadge(); } }));
   }
-  if (act === 'pay') {
+  if (act === 'pay') return pkAsk(() => {
     const owed = pkTotals().owed;
-    return promptSheet({ title: 'Pay out', label: 'Amount paid', value: owed > 0 ? owed.toFixed(2) : '', placeholder: '0.00', ok: 'Pay out', onOk: v => {
+    promptSheet({ title: 'Pay out', label: 'Amount paid', value: owed > 0 ? owed.toFixed(2) : '', placeholder: '0.00', ok: 'Pay out', onOk: v => {
       const n = pkNum(parseFloat(String(v).replace(/[£,\s]/g, '')), NaN);
       if (!(n > 0)) return toast('Enter how much was paid', { err: true });
       withUndo(`Paid out ${gbp(n)}`, () => { P.paid.unshift({ id: uid(), at: Date.now(), amt: n }); });
     } });
-  }
-  if (act === 'unpay') return withUndo('Payment removed', () => { P.paid = P.paid.filter(x => x.id !== a.dataset.id); });
+  });
+  if (act === 'unpay') return pkAsk(() => withUndo('Payment removed', () => { P.paid = P.paid.filter(x => x.id !== a.dataset.id); }));
 });
 $('pkBody').addEventListener('keydown', e => {
   const t = e.target.closest('.pk-t');
@@ -3850,7 +4023,7 @@ $('pkBody').addEventListener('keydown', e => {
 $('pkBody').addEventListener('input', e => {
   const P = S.pocket;
   if (e.target.id === 'pkName') { P.name = e.target.value; save(); pkHero(); }
-  else if (e.target.id === 'pkSavings') { P.savings = e.target.value; save(); pkMoney(); }
+  else if (e.target.id === 'pkSavings' && pkParent()) { P.savings = e.target.value; save(); pkMoney(); }
 });
 $('pkBody').addEventListener('change', e => {
   const P = S.pocket, f = e.target.dataset.ef;
