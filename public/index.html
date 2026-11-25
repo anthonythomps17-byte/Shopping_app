@@ -49,6 +49,7 @@
   --c-rec:#1baf7a;
   --c-hist:#2a78d6;
   --c-set:#d9558f;
+  --c-pocket:#a24fe0;
   --warm-grad:linear-gradient(150deg,#fb8a4c 0%,#ee6744 50%,#dc4b5c 100%);
   --wash:radial-gradient(900px 480px at 100% -12%,rgba(18,181,203,.10),transparent 62%),radial-gradient(640px 420px at -8% 4%,rgba(255,201,60,.10),transparent 60%),radial-gradient(700px 520px at 50% 115%,rgba(124,92,219,.06),transparent 60%);
 
@@ -134,6 +135,7 @@ svg{flex:none}
 .tab[data-view="recipes"],#v-recipes{--sec:var(--c-rec)}
 .tab[data-view="history"],#v-history{--sec:var(--c-hist)}
 .tab[data-view="settings"],#v-settings{--sec:var(--c-set)}
+.tab[data-view="pocket"],#v-pocket{--sec:var(--c-pocket)}
 .tab .cnt{margin-left:auto;font-family:var(--mono);font-size:11px;font-weight:750;background:var(--accent);color:#5c4400;border-radius:999px;padding:1px 7px}
 .railfoot{margin-top:auto;padding:14px 12px 2px;border-top:1px solid var(--border);font-size:11px;color:var(--muted-2);font-weight:650;line-height:1.5}
 .workcol{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -556,6 +558,79 @@ details.trip[open] summary::after{transform:rotate(90deg)}
 #toast.err{background:var(--danger);color:#fff}
 #toast button{background:none;border:none;color:inherit;font-weight:800;padding:0;text-decoration:underline;text-underline-offset:3px}
 
+/* ============ Pocket money ============ */
+#v-pocket .hero{--glow:rgba(255,170,220,.42);background:linear-gradient(140deg,#8b4dff 0%,#b44fe0 50%,#ff5fab 100%);box-shadow:0 14px 34px rgba(180,79,224,.3)}
+.pk-seg{justify-self:start}
+#v-pocket .btn.solid{background:var(--c-pocket);border-color:var(--c-pocket)}
+#v-pocket .btn.solid:hover{background:color-mix(in srgb,var(--c-pocket) 85%,#000)}
+.pk-big{font-size:44px;line-height:1;margin-bottom:8px}
+.pk-task{
+  display:flex;align-items:center;gap:14px;padding:14px 16px;margin-top:10px;border-radius:16px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface-2);user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+  transition:background .2s,border-color .2s,transform .1s;
+}
+.pk-task:active{transform:scale(.98)}
+.pk-task .tick{width:34px;height:34px}
+.pk-task .tick svg{width:18px;height:18px}
+.pk-task .emo{font-size:28px;line-height:1;flex:none}
+.pk-task b{flex:1;min-width:0;font-size:17px;font-weight:750;overflow-wrap:anywhere}
+.pk-task small{font-size:12px;font-weight:800;color:var(--success);letter-spacing:.04em;text-transform:uppercase}
+.pk-task.done,.pk-day .item.done{background:var(--success-soft);border-color:color-mix(in srgb,var(--success) 40%,var(--border))}
+.pk-task.done .tick{background:var(--success);border-color:var(--success)}
+.pk-task.done .tick svg{opacity:1;transform:none}
+.pk-pop{animation:pkpop .4s ease}
+@keyframes pkpop{0%{transform:scale(1)}35%{transform:scale(1.045)}100%{transform:scale(1)}}
+.pk-win{text-align:center;padding:22px 16px;margin-top:14px;border-radius:18px;color:#fff;background:linear-gradient(140deg,#8b4dff 0%,#b44fe0 50%,#ff5fab 100%);animation:pkpop .5s ease}
+.pk-win b{display:block;font-size:19px}
+.pk-win span{font-size:13px;font-weight:650;opacity:.9}
+.pk-off{text-align:center;padding:34px 18px}
+.pk-off b{display:block;font-size:18px}
+.pk-off p{margin:6px 0 0;color:var(--muted)}
+.pk-wbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px}
+.pk-wbar .wt{flex:1;min-width:140px;text-align:center}
+.pk-wbar .wt b{display:block;font-size:16px}
+.pk-wbar .wt small{color:var(--muted);font-weight:650;font-size:12px}
+.pk-wbar .iconbtn:disabled{opacity:.35;cursor:default}
+.pk-wbar .actions{width:100%;justify-content:center}
+.pk-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.pk-day{padding:14px 12px 8px}
+.pk-day h3{margin:0 0 6px;padding:0 6px}
+.pk-day.done{border-color:color-mix(in srgb,var(--success) 45%,var(--border));background:linear-gradient(160deg,var(--success-soft) 0%,var(--surface) 80%)}
+.pk-day.today:not(.done){border-color:color-mix(in srgb,var(--c-pocket) 45%,var(--border))}
+.pk-day .item{padding:10px 8px}
+.pk-day .item.done{background:transparent}
+.pk-day .item.done .tick{background:var(--success);border-color:var(--success)}
+.pk-day .item.done .tick svg{opacity:1;transform:none}
+.pk-day .item .ibody b{font-size:15px}
+.pk-day .item.done .ibody b{text-decoration:none;color:var(--text)}
+.pk-day .off{margin:6px;color:var(--muted);font-weight:650}
+#v-pocket .tiles .tile:nth-child(1){--tc:var(--c-pocket)}
+#v-pocket .tiles .tile:nth-child(2){--tc:var(--c-meals)}
+#v-pocket .tiles .tile:nth-child(3){--tc:var(--success)}
+#v-pocket .tiles .tile:nth-child(4){--tc:var(--c-hist)}
+.pk-row{display:flex;align-items:center;gap:10px;padding:11px 4px;border-top:1px solid var(--surface-3)}
+.pk-row:first-of-type{border-top:none}
+.pk-row .lbl{flex:1;min-width:0;font-weight:650}
+.pk-row .lbl small{display:block;color:var(--muted);font-size:12px;font-weight:600}
+.pk-row .amt{font-family:var(--mono);font-weight:750;white-space:nowrap}
+.pk-row .amt.plus{color:var(--success)}
+.pk-row .amt.minus{color:var(--danger)}
+.pk-row .amt.zero{color:var(--muted)}
+.pk-chore{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:8px 10px;align-items:center;padding:12px 0;border-top:1px solid var(--surface-3)}
+.pk-emo{text-align:center;font-size:22px!important;padding:7px 4px!important}
+.pk-dayp{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.pk-dayp button{width:36px;height:36px;border-radius:50%;border:1px solid var(--border-strong);background:var(--surface);font-weight:750;font-size:11.5px;color:var(--muted);padding:0}
+.pk-dayp button.on{background:var(--c-pocket);border-color:var(--c-pocket);color:#fff}
+.pk-add{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;margin-top:14px}
+.pk-emojis{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pk-emojis button{font-size:19px;width:40px;height:40px;padding:0;border-radius:11px;border:1px solid var(--border);background:var(--surface-2)}
+.pk-emojis button:hover{border-color:var(--c-pocket)}
+#pkConfetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:300}
+@media (max-width:760px){
+  .pk-seg{justify-self:stretch}
+  .pk-seg button{flex:1;padding:8px 4px}
+}
+
 /* ============ Sharing between phones ============ */
 #syncBtn{position:relative}
 #syncBtn::after{content:"";position:absolute;right:7px;bottom:8px;width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 0 2px var(--surface)}
@@ -658,6 +733,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
     <symbol id="i-chevl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></symbol>
     <symbol id="i-chevr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></symbol>
     <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H8a6 6 0 1 1 5.7-7.9A4.5 4.5 0 1 1 17.5 19z"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.6 8.6A2.4 2.4 0 0 0 10.3 10v6M8.6 12.6h4.6M8.6 16h6.8"/></symbol>
     <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
   </defs>
 </svg>
@@ -674,6 +750,7 @@ details.trip[open] summary::after{transform:rotate(90deg)}
       <button class="tab" data-view="containers"><svg><use href="#i-box"/></svg>Containers</button>
       <button class="tab" data-view="recipes"><svg><use href="#i-book"/></svg>Recipes</button>
       <button class="tab" data-view="history"><svg><use href="#i-clock"/></svg>History</button>
+      <button class="tab" data-view="pocket"><svg><use href="#i-coin"/></svg>Pocket<span class="cnt" id="pkCnt" hidden></span></button>
       <button class="tab" data-view="settings"><svg><use href="#i-gear"/></svg>Settings</button>
     </nav>
     <div class="railfoot" id="railFoot">Stored on this device only.<br>Nothing is sent anywhere.</div>
@@ -789,6 +866,15 @@ details.trip[open] summary::after{transform:rotate(90deg)}
               <div id="tripRows"></div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- ============ POCKET MONEY ============ -->
+      <section class="view" id="v-pocket">
+        <div class="stack">
+          <div class="hero" id="pkHero"></div>
+          <div class="seg pk-seg" id="pkSeg" role="tablist"><button data-pt="today">Today</button><button data-pt="week">This week</button><button data-pt="money">Money</button><button data-pt="setup">Set up</button></div>
+          <div id="pkBody"></div>
         </div>
       </section>
 
@@ -1140,11 +1226,44 @@ function itemsCost(items) {
 }
 const money = c => (c.est ? '≈ ' : '') + gbp(c.total);
 
+/* ================= Pocket money: data ================= */
+// A weekly chore chart for a child. Each chore can be set for some days of the
+// week; ticking every box in a week earns the weekly amount (or a share for each
+// box, if set that way). Weeks are kept by their Monday, and each keeps a copy of
+// the chores and pay it was set up with, so changing them later doesn't rewrite
+// what's already been earned. Savings earn 10% a month.
+const PK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const PK_ALL = [0, 1, 2, 3, 4, 5, 6];
+const PK_DEFAULT_CHORES = [['chores', '🧹', 'Chores'], ['homework', '📚', 'Homework'], ['attitude', '😊', 'Good attitude']];
+const PK_RATE = 0.10;
+const pkNum = (v, d) => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : d; };
+function pkChores(a) {
+  if (!Array.isArray(a)) return PK_DEFAULT_CHORES.map(([id, emoji, name]) => ({ id, emoji, name, days: PK_ALL.slice() }));
+  return a.filter(c => c && typeof c === 'object' && c.id).map(c => ({
+    ...c, id: String(c.id), emoji: String(c.emoji ?? ''), name: String(c.name ?? ''),
+    days: Array.isArray(c.days) ? [...new Set(c.days.map(Number).filter(d => Number.isInteger(d) && d >= 0 && d <= 6))].sort() : PK_ALL.slice(),
+  }));
+}
+function pkFix(p) {
+  p = p && typeof p === 'object' && !Array.isArray(p) ? p : {};
+  const o = { ...p, name: String(p.name ?? ''), savings: String(p.savings ?? ''), weekly: pkNum(p.weekly, 10),
+    mode: p.mode === 'share' ? 'share' : 'all', chores: pkChores(p.chores), weeks: {}, paid: [] };
+  const weeks = p.weeks && typeof p.weeks === 'object' && !Array.isArray(p.weeks) ? p.weeks : {};
+  for (const [m, w] of Object.entries(weeks)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(m) || !w || typeof w !== 'object') continue;
+    const ticks = {};
+    for (const [k, v] of Object.entries(w.ticks && typeof w.ticks === 'object' ? w.ticks : {})) if (v === true) ticks[k] = true;
+    o.weeks[m] = { ...w, pay: pkNum(w.pay, o.weekly), mode: w.mode === 'share' ? 'share' : 'all', chores: pkChores(w.chores), ticks };
+  }
+  if (Array.isArray(p.paid)) o.paid = p.paid.filter(x => x && typeof x === 'object' && x.id).map(x => ({ ...x, amt: pkNum(x.amt, 0), at: Number(x.at) || 0 }));
+  return o;
+}
+
 /* ================= State ================= */
 const DEFAULT_STAPLES = ['Salt', 'Black pepper', 'Pepper', 'Water', 'Olive oil', 'Vegetable oil', 'Sunflower oil'];
 function blank() {
   const list = { id: uid(), name: 'Shopping', items: [], created: Date.now() };
-  return { v: 1, lists: [list], active: list.id, containers: [], recipes: [], meals: [], catalog: {}, trips: [], stock: {},
+  return { v: 1, lists: [list], active: list.id, containers: [], recipes: [], meals: [], catalog: {}, trips: [], stock: {}, pocket: pkFix(),
     settings: { theme: 'auto', groupBy: 'aisle', staples: DEFAULT_STAPLES.slice(), prices: 'std', tubeGarlic: true } };
 }
 function fix(s) {
@@ -1154,6 +1273,7 @@ function fix(s) {
   for (const k of ['lists', 'containers', 'recipes', 'meals', 'trips']) if (!Array.isArray(o[k])) o[k] = [];
   if (!o.catalog || typeof o.catalog !== 'object') o.catalog = {};
   if (!o.stock || typeof o.stock !== 'object' || Array.isArray(o.stock)) o.stock = {};
+  o.pocket = pkFix(o.pocket);
   if (!o.lists.length) o.lists = blank().lists;
   for (const l of o.lists) { l.items = Array.isArray(l.items) ? l.items : []; for (const i of l.items) i.srcs = Array.isArray(i.srcs) ? i.srcs : []; }
   if (!o.lists.some(l => l.id === o.active)) o.active = o.lists[0].id;
@@ -1676,6 +1796,7 @@ const VIEWS = {
   containers: ['Containers', 'Groups of items you buy together'],
   recipes: ['Recipes', 'Import recipes from Claude and shop for the ingredients'],
   history: ['History', 'What you buy, and when'],
+  pocket: ['Pocket money', 'Chores, stars and money earned'],
   settings: ['Settings', 'Sharing, theme, staples and backups'],
 };
 let view = 'lists';
@@ -1698,8 +1819,8 @@ function render() {
   const [title, sub] = VIEWS[view];
   $('viewTitle').textContent = view === 'lists' ? cur().name : title;
   $('viewSub').textContent = sub;
-  renderChip();
-  ({ lists: renderLists, plan: renderPlan, containers: renderContainers, recipes: renderRecipes, history: renderHistory, settings: renderSettings })[view]();
+  renderChip(); pkBadge();
+  ({ lists: renderLists, plan: renderPlan, containers: renderContainers, recipes: renderRecipes, history: renderHistory, pocket: renderPocket, settings: renderSettings })[view]();
 }
 function renderChip() {
   const l = cur(), left = l.items.filter(i => !i.done).length;
@@ -3432,6 +3553,327 @@ $('v-history').addEventListener('click', e => {
   ] });
 });
 
+/* ================= Pocket money ================= */
+const pkMonday = () => mondayOf(todayIso());
+const pkDayIdx = iso => (fromIso(iso).getDay() + 6) % 7;
+// "In the pot" goes below zero if more's been paid out than earned
+const pkPot = n => n < 0 ? `−${gbp(-n)}` : gbp(n);
+// A week's record, or (if nothing's been ticked yet) how it would look with today's set-up
+function pkWeek(monday, create) {
+  const P = S.pocket;
+  if (!P.weeks[monday] && create) P.weeks[monday] = { pay: P.weekly, mode: P.mode, chores: JSON.parse(JSON.stringify(P.chores)), ticks: {} };
+  return P.weeks[monday] || { pay: P.weekly, mode: P.mode, chores: P.chores, ticks: {} };
+}
+function pkStats(w) {
+  const days = PK_ALL.map(d => {
+    const cs = w.chores.filter(c => c.days.includes(d)), done = cs.filter(c => w.ticks[`${d}:${c.id}`]).length;
+    return { cs, total: cs.length, done, full: cs.length > 0 && done === cs.length };
+  });
+  const total = days.reduce((a, x) => a + x.total, 0), done = days.reduce((a, x) => a + x.done, 0);
+  const earned = !total ? 0 : w.mode === 'share' ? Math.round(w.pay * done / total * 100) / 100 : done === total ? w.pay : 0;
+  return { days, total, done, left: total - done, earned, full: total > 0 && done === total, stars: days.filter(x => x.full).length };
+}
+function pkTotals() {
+  const P = S.pocket;
+  let earned = 0, stars = 0;
+  for (const w of Object.values(P.weeks)) { const st = pkStats(w); earned += st.earned; stars += st.stars; }
+  const paid = P.paid.reduce((a, x) => a + x.amt, 0), r = n => Math.round(n * 100) / 100;
+  return { earned: r(earned), paid: r(paid), owed: r(earned - paid), stars };
+}
+// Days in a row with everything done (today only counts once it's finished)
+function pkStreak() {
+  const today = todayIso(), cur = pkMonday(), cache = new Map();
+  let n = 0, d = today;
+  for (let i = 0; i < 800; i++, d = addDays(d, -1)) {
+    const m = mondayOf(d);
+    if (!cache.has(m)) cache.set(m, S.pocket.weeks[m] || m === cur ? pkStats(pkWeek(m)) : null);
+    const st = cache.get(m);
+    if (!st) break;
+    const day = st.days[pkDayIdx(d)];
+    if (!day.total) continue;
+    if (day.full) n++;
+    else if (d !== today) break;
+  }
+  return n;
+}
+
+/* ---- confetti ---- */
+let pkCv = null, pkParts = [], pkRaf = 0;
+function pkConfetti(x, y, n = 36, power = 1) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!pkCv) { pkCv = document.createElement('canvas'); pkCv.id = 'pkConfetti'; document.body.appendChild(pkCv); }
+  const dpr = devicePixelRatio || 1;
+  if (pkCv.width !== innerWidth * dpr || pkCv.height !== innerHeight * dpr) { pkCv.width = innerWidth * dpr; pkCv.height = innerHeight * dpr; }
+  const cols = ['#8b4dff', '#ff5fab', '#ffc93c', '#12b5cb', '#1baf7a', '#f0703f'];
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.15, v = (4 + Math.random() * 7) * power;
+    pkParts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, w: 6 + Math.random() * 6, h: 4 + Math.random() * 4, r: Math.random() * 6,
+      vr: (Math.random() - .5) * .4, c: cols[i % cols.length], life: 0, max: 80 + Math.random() * 60, round: Math.random() < .3 });
+  }
+  if (!pkRaf) pkRaf = requestAnimationFrame(pkFrame);
+}
+function pkFrame() {
+  const ctx = pkCv.getContext('2d'), dpr = devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, innerWidth, innerHeight);
+  pkParts = pkParts.filter(q => q.life++ < q.max && q.y < innerHeight + 40);
+  for (const q of pkParts) {
+    q.vy += .22; q.vx *= .985; q.vy *= .985; q.x += q.vx; q.y += q.vy; q.r += q.vr;
+    ctx.save(); ctx.globalAlpha = Math.min(1, (q.max - q.life) / 25); ctx.translate(q.x, q.y); ctx.rotate(q.r); ctx.fillStyle = q.c;
+    if (q.round) { ctx.beginPath(); ctx.arc(0, 0, q.h / 1.6, 0, 7); ctx.fill(); } else ctx.fillRect(-q.w / 2, -q.h / 2, q.w, q.h);
+    ctx.restore();
+  }
+  pkRaf = pkParts.length ? requestAnimationFrame(pkFrame) : 0;
+}
+function pkParty() {
+  const w = innerWidth, h = innerHeight;
+  pkConfetti(w * .15, h * .95, 80, 1.6); pkConfetti(w * .85, h * .95, 80, 1.6);
+  setTimeout(() => pkConfetti(w / 2, h * .7, 110, 1.7), 300);
+  setTimeout(() => { pkConfetti(w * .3, h * .9, 60, 1.5); pkConfetti(w * .7, h * .9, 60, 1.5); }, 750);
+}
+const PK_CHEERS = ['Nice one! 👍', 'Great job! 🙌', 'Ticked off! ✅', 'Smashed it! 💪', 'Keep going! 🚀', 'Brilliant! ✨', 'Yes! 🎯', 'Superstar! 🌟'];
+
+/* ---- screens ---- */
+let pkTab = 'today', pkWeekOff = 0;
+try { const t = localStorage.getItem('shop_pktab'); if (['today', 'week', 'money', 'setup'].includes(t)) pkTab = t; } catch {}
+function pkBadge() {
+  const day = pkStats(pkWeek(pkMonday())).days[pkDayIdx(todayIso())], left = day.total - day.done;
+  $('pkCnt').hidden = !left || view === 'pocket';
+  $('pkCnt').textContent = left;
+}
+function pkHero() {
+  const P = S.pocket, w = pkWeek(pkMonday()), st = pkStats(w), tot = pkTotals(), streak = pkStreak(), name = P.name.trim();
+  const msg = !st.total ? 'Add some chores in Set up to get started'
+    : st.full ? (w.mode === 'all' ? `🎉 Amazing! ${gbp(w.pay)} pocket money earned!` : `🎉 Every box ticked! ${gbp(st.earned)} earned`)
+    : w.mode === 'all' ? `${st.left} ${st.left === 1 ? 'box' : 'boxes'} left to earn ${gbp(w.pay)}`
+    : `${gbp(st.earned)} earned so far, up to ${gbp(w.pay)}`;
+  $('pkHero').innerHTML = `
+    <div class="hero-top"><div>
+      <div class="eyebrow">${name ? `${esc(name)}’s pocket money` : 'Pocket money'}</div>
+      <div class="hero-net">${pkPot(tot.owed)}<small>${tot.owed < 0 ? 'paid ahead' : 'in the pot'}</small></div>
+      <div class="hero-meta"><span class="hero-pill">${st.done}/${st.total} this week</span>${streak ? `<span class="hero-pill">🔥 ${plural(streak, 'day')}</span>` : ''}<span class="hero-pill">⭐ ${tot.stars}</span><span>${msg}</span></div>
+    </div></div>
+    <div class="gbar" role="progressbar" aria-label="This week’s boxes ticked" aria-valuemin="0" aria-valuemax="${st.total}" aria-valuenow="${st.done}"><span style="width:${st.total ? st.done / st.total * 100 : 0}%"></span></div>`;
+}
+function renderPocket() {
+  pkHero();
+  document.querySelectorAll('#pkSeg button').forEach(b => { b.classList.toggle('on', b.dataset.pt === pkTab); b.setAttribute('aria-selected', b.dataset.pt === pkTab); });
+  // don't redraw under someone who's typing (sharing can re-render at any moment)
+  const a = document.activeElement;
+  if (a && $('pkBody').contains(a) && a.tagName === 'INPUT') return;
+  $('pkBody').innerHTML = ({ today: pkTodayHtml, week: pkWeekHtml, money: pkMoneyHtml, setup: pkSetupHtml })[pkTab]();
+  if (pkTab === 'money') pkMoney();
+}
+const pkTick = (m, d, c, on) => `data-m="${m}" data-d="${d}" data-cid="${esc(c.id)}" role="checkbox" aria-checked="${!!on}" tabindex="0"`;
+function pkTodayHtml() {
+  const today = todayIso(), m = mondayOf(today), w = pkWeek(m), d = pkDayIdx(today), day = pkStats(w).days[d];
+  if (!S.pocket.chores.length && !day.total) return `<div class="card pk-off"><div class="pk-big">📝</div><b>No chores yet</b><p>Add the jobs to do each day, and how much they earn.</p><button class="btn solid" data-pk="setup" style="margin-top:14px">${ico('plus')}Set up chores</button></div>`;
+  if (!day.total) return `<div class="card pk-off"><div class="pk-big">🎈</div><b>Day off!</b><p>Nothing to do today. Enjoy it.</p></div>`;
+  const streak = pkStreak();
+  return `<div class="card">
+    <h3>Today · ${PK_DAYS[d]}<span class="sub">${day.done}/${day.total} done</span></h3>
+    ${day.cs.map(c => { const on = w.ticks[`${d}:${c.id}`]; return `<div class="pk-task pk-t${on ? ' done' : ''}" ${pkTick(m, d, c, on)}>
+      <span class="tick">${ico('check')}</span><span class="emo">${esc(c.emoji || '⭐')}</span><b>${esc(c.name || 'Chore')}</b>${on ? '<small>Done!</small>' : ''}</div>`; }).join('')}
+    ${day.full ? `<div class="pk-win"><div class="pk-big">⭐</div><b>All done for today!</b><span>That’s a star${streak > 1 ? ` and a ${streak}-day streak 🔥` : ''}</span></div>` : ''}
+  </div>`;
+}
+function pkWeekHtml() {
+  const m = addDays(pkMonday(), 7 * pkWeekOff), w = pkWeek(m), st = pkStats(w), today = todayIso();
+  const title = pkWeekOff === 0 ? 'This week' : pkWeekOff === -1 ? 'Last week' : `Week of ${dayLabel(m, { day: 'numeric', month: 'short' })}`;
+  return `<div class="stack">
+    <div class="card pk-wbar">
+      <button class="iconbtn" data-pk="prev" title="Week before" aria-label="Week before">${ico('chevl')}</button>
+      <div class="wt"><b>${title}</b><small>${st.done}/${st.total} boxes · ${gbp(st.earned)} earned</small></div>
+      <button class="iconbtn" data-pk="next" title="Week after" aria-label="Week after"${pkWeekOff >= 0 ? ' disabled' : ''}>${ico('chevr')}</button>
+      <div class="actions"><button class="btn sm" data-pk="all" data-wk="${m}">${ico('check')}Tick everything</button><button class="btn sm danger" data-pk="reset" data-wk="${m}">${ico('repeat')}Reset week</button></div>
+    </div>
+    <div class="pk-days">${PK_ALL.map(d => {
+      const date = addDays(m, d), day = st.days[d];
+      return `<div class="card pk-day${day.full ? ' done' : ''}${date === today ? ' today' : ''}">
+        <h3>${PK_DAYS[d]}${day.full ? ' ⭐' : ''}${date === today ? '<span class="badge info">Today</span>' : ''}<span class="sub">${day.total ? `${day.done}/${day.total}` : ''}</span></h3>
+        ${day.total ? day.cs.map(c => { const on = w.ticks[`${d}:${c.id}`]; return `<div class="item pk-t${on ? ' done' : ''}" ${pkTick(m, d, c, on)}><span class="tick">${ico('check')}</span><div class="ibody"><b>${esc(c.emoji || '⭐')} ${esc(c.name || 'Chore')}</b></div></div>`; }).join('') : '<p class="off">🎈 Day off</p>'}
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+function pkMoneyHtml() {
+  const P = S.pocket, tot = pkTotals(), w = pkWeek(pkMonday()), st = pkStats(w);
+  const rows = [
+    ...Object.entries(P.weeks).map(([m, wk]) => ({ at: fromIso(m).getTime(), m, st: pkStats(wk) })).filter(x => x.st.total && x.st.done),
+    ...P.paid.map(x => ({ at: x.at, pay: x })),
+  ].sort((a, b) => b.at - a.at);
+  return `<div class="stack">
+    <div class="tiles">
+      <div class="tile"><div class="eyebrow">In the pot</div><b>${pkPot(tot.owed)}</b><small>${tot.owed < 0 ? 'Paid out ahead of earning it' : 'Earned, not paid out yet'}</small></div>
+      <div class="tile"><div class="eyebrow">This week</div><b>${gbp(st.earned)}</b><small>${w.mode === 'all' ? `${gbp(w.pay)} when every box is ticked` : `Up to ${gbp(w.pay)}`}</small></div>
+      <div class="tile"><div class="eyebrow">Earned so far</div><b>${gbp(tot.earned)}</b><small>⭐ ${plural(tot.stars, 'star')}</small></div>
+      <div class="tile"><div class="eyebrow">Paid out</div><b>${gbp(tot.paid)}</b><small>${plural(P.paid.length, 'payment')}</small></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>History</h3>
+        <div class="actions" style="margin-bottom:10px"><button class="btn solid" data-pk="pay">${ico('coin')}Pay out</button></div>
+        ${rows.map(r => r.pay
+          ? `<div class="pk-row"><span>💷</span><span class="lbl">Paid out<small>${esc(fmtDate(r.at))}</small></span><span class="amt minus">−${gbp(r.pay.amt)}</span><button class="tact del" data-pk="unpay" data-id="${esc(r.pay.id)}" title="Remove" aria-label="Remove this payment">${ico('trash')}</button></div>`
+          : `<div class="pk-row"><span>${r.st.full ? '⭐' : '🗓️'}</span><span class="lbl">Week of ${esc(dayLabel(r.m, { day: 'numeric', month: 'short' }))}<small>${r.st.done}/${r.st.total} boxes${r.st.full ? ' · every box ticked' : ''}</small></span><span class="amt ${r.st.earned ? 'plus' : 'zero'}">+${gbp(r.st.earned)}</span></div>`).join('')
+          || '<p class="muted" style="margin:4px 0">Weeks and payments show up here.</p>'}
+      </div>
+      <div class="card">
+        <h3>Savings</h3>
+        <div class="field"><label for="pkSavings">Savings balance</label><div class="money"><input class="input" id="pkSavings" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" value="${esc(P.savings)}"></div></div>
+        <div class="tiles" style="margin-top:14px">
+          <div class="tile"><div class="eyebrow">10% monthly interest</div><b id="pkInterest">£0.00</b></div>
+          <div class="tile"><div class="eyebrow">After interest</div><b id="pkTotal">£0.00</b></div>
+        </div>
+        <p class="note">Interest is calculated at 10% per month from the savings value entered.</p>
+      </div>
+    </div>
+  </div>`;
+}
+const PK_EMOJIS = ['🧹', '🛏️', '🍽️', '🧺', '🗑️', '🦷', '📚', '🎒', '🐶', '🐦', '🌱', '🎹', '🏃', '🧸', '😊', '⭐'];
+function pkSetupHtml() {
+  const P = S.pocket;
+  return `<div class="grid2">
+    <div class="card">
+      <h3>Pocket money</h3>
+      <div class="field"><label for="pkName">Name</label><input class="input" id="pkName" placeholder="Enter name" autocomplete="off" autocapitalize="words" value="${esc(P.name)}"></div>
+      <div class="field" style="margin-top:12px"><label for="pkWeekly">Earned each week</label><div class="money"><input class="input" id="pkWeekly" type="number" min="0" step="0.5" inputmode="decimal" value="${P.weekly}"></div></div>
+      <div class="field" style="margin-top:12px"><span class="flabel">How it’s earned</span><div class="seg" id="pkMode"><button data-mode="all" class="${P.mode === 'all' ? 'on' : ''}">Every box ticked</button><button data-mode="share" class="${P.mode === 'share' ? 'on' : ''}">A share per box</button></div></div>
+      <p class="note">${P.mode === 'all' ? `Every box in the week has to be ticked to earn the ${gbp(P.weekly)}.` : `Each box ticked earns its share of the ${gbp(P.weekly)}, so a nearly-done week still earns most of it.`} Changes count from this week; past weeks keep what they earned.</p>
+    </div>
+    <div class="card">
+      <h3>Chores <span class="sub">${P.chores.length}</span></h3>
+      ${P.chores.map(c => `<div class="pk-chore" data-ed="${esc(c.id)}">
+        <input class="input pk-emo" data-ef="emoji" value="${esc(c.emoji)}" aria-label="Emoji for ${esc(c.name)}">
+        <input class="input" data-ef="name" value="${esc(c.name)}" aria-label="Chore name">
+        <button class="tact del" data-ea="del" title="Remove" aria-label="Remove ${esc(c.name)}">${ico('trash')}</button>
+        <div class="pk-dayp">${PK_DAYS.map((n, i) => `<button data-ea="day" data-d="${i}" class="${c.days.includes(i) ? 'on' : ''}" aria-pressed="${c.days.includes(i)}" title="${n}">${n.slice(0, 2)}</button>`).join('')}</div>
+      </div>`).join('') || '<p class="muted" style="margin:4px 0">No chores yet. Add the first one below.</p>'}
+      <form class="pk-add" id="pkAdd" autocomplete="off">
+        <input class="input pk-emo" id="pkNewEmo" value="⭐" aria-label="Emoji for the new chore">
+        <input class="input" id="pkNewName" placeholder="Add a chore, e.g. Make your bed" aria-label="New chore">
+        <button class="btn solid" type="submit">${ico('plus')}<span>Add</span></button>
+      </form>
+      <div class="pk-emojis">${PK_EMOJIS.map(e => `<button type="button" data-emo="${e}" aria-label="Use ${e}">${e}</button>`).join('')}</div>
+      <p class="note">Tap the days under a chore to choose when it needs doing.</p>
+    </div>
+  </div>`;
+}
+function pkMoney() {
+  if (!$('pkInterest')) return;
+  const savings = Number(S.pocket.savings) || 0, interest = savings * PK_RATE;
+  $('pkInterest').textContent = gbp(interest);
+  $('pkTotal').textContent = gbp(savings + interest);
+}
+// This week follows the set-up as it changes; earlier weeks keep their own
+function pkApply() {
+  const P = S.pocket, w = P.weeks[pkMonday()];
+  if (w) { w.chores = JSON.parse(JSON.stringify(P.chores)); w.pay = P.weekly; w.mode = P.mode; }
+}
+
+/* ---- actions ---- */
+function pkToggle(el) {
+  const m = el.dataset.m, d = +el.dataset.d, cid = el.dataset.cid, k = `${d}:${cid}`;
+  const r = el.getBoundingClientRect(), focused = el === document.activeElement, w = pkWeek(m, true), before = pkStats(w);
+  if (w.ticks[k]) delete w.ticks[k]; else w.ticks[k] = true;
+  const on = !!w.ticks[k], after = pkStats(w);
+  save(); renderPocket(); pkBadge();
+  const again = $('pkBody').querySelector(`[data-m="${m}"][data-d="${d}"][data-cid="${CSS.escape(cid)}"]`);
+  if (again) { if (focused) again.focus(); if (on) again.classList.add('pk-pop'); }
+  if (!on) return;
+  if (after.full && !before.full) {
+    pkParty();
+    toast(w.mode === 'all' ? `🎉 Amazing! ${gbp(w.pay)} pocket money earned!` : `🎉 Every box ticked! ${gbp(after.earned)} earned this week!`);
+  } else if (after.days[d].full && !before.days[d].full) {
+    pkConfetti(innerWidth / 2, innerHeight * .75, 90, 1.5);
+    const streak = m === pkMonday() ? pkStreak() : 0;
+    toast(`⭐ ${PK_DAYS[d]} done! That’s a star${streak > 1 ? ` · ${streak}-day streak 🔥` : ''}`);
+  } else {
+    pkConfetti(r.left + 34, r.top + r.height / 2, 28, .9);
+    toast(PK_CHEERS[Math.floor(Math.random() * PK_CHEERS.length)]);
+  }
+}
+$('pkSeg').onclick = e => {
+  const b = e.target.closest('[data-pt]');
+  if (!b) return;
+  pkTab = b.dataset.pt; pkWeekOff = 0;
+  try { localStorage.setItem('shop_pktab', pkTab); } catch {}
+  renderPocket();
+};
+$('pkBody').addEventListener('click', e => {
+  const t = e.target.closest('.pk-t');
+  if (t) return pkToggle(t);
+  const P = S.pocket;
+  const emo = e.target.closest('[data-emo]');
+  if (emo) { $('pkNewEmo').value = emo.dataset.emo; return $('pkNewName').focus(); }
+  const mode = e.target.closest('[data-mode]');
+  if (mode) { P.mode = mode.dataset.mode; pkApply(); save(); return renderPocket(); }
+  const ea = e.target.closest('[data-ea]');
+  if (ea) {
+    const c = P.chores.find(x => x.id === ea.closest('[data-ed]').dataset.ed);
+    if (!c) return;
+    if (ea.dataset.ea === 'del') return withUndo(`Removed ${c.name || 'chore'}`, () => { P.chores = P.chores.filter(x => x !== c); pkApply(); });
+    const d = +ea.dataset.d;
+    c.days = c.days.includes(d) ? c.days.filter(x => x !== d) : [...c.days, d].sort();
+    pkApply(); save(); return renderPocket();
+  }
+  const a = e.target.closest('[data-pk]');
+  if (!a) return;
+  const act = a.dataset.pk;
+  if (act === 'setup') { pkTab = 'setup'; try { localStorage.setItem('shop_pktab', pkTab); } catch {} return renderPocket(); }
+  if (act === 'prev' || act === 'next') { pkWeekOff = Math.min(0, pkWeekOff + (act === 'next' ? 1 : -1)); return renderPocket(); }
+  if (act === 'all') {
+    const m = a.dataset.wk, before = pkStats(pkWeek(m));
+    withUndo('Everything ticked', () => { const w = pkWeek(m, true); for (const d of PK_ALL) for (const c of w.chores) if (c.days.includes(d)) w.ticks[`${d}:${c.id}`] = true; });
+    if (!before.full && pkStats(pkWeek(m)).full) pkParty();
+    return pkBadge();
+  }
+  if (act === 'reset') {
+    const m = a.dataset.wk;
+    return confirmSheet({ title: 'Reset the week?', text: 'Reset all ticks for this week?', ok: 'Reset week', danger: true,
+      onOk: () => { withUndo('Week reset', () => { if (P.weeks[m]) P.weeks[m].ticks = {}; }); pkBadge(); } });
+  }
+  if (act === 'pay') {
+    const owed = pkTotals().owed;
+    return promptSheet({ title: 'Pay out', label: 'Amount paid', value: owed > 0 ? owed.toFixed(2) : '', placeholder: '0.00', ok: 'Pay out', onOk: v => {
+      const n = pkNum(parseFloat(String(v).replace(/[£,\s]/g, '')), NaN);
+      if (!(n > 0)) return toast('Enter how much was paid', { err: true });
+      withUndo(`Paid out ${gbp(n)}`, () => { P.paid.unshift({ id: uid(), at: Date.now(), amt: n }); });
+    } });
+  }
+  if (act === 'unpay') return withUndo('Payment removed', () => { P.paid = P.paid.filter(x => x.id !== a.dataset.id); });
+});
+$('pkBody').addEventListener('keydown', e => {
+  const t = e.target.closest('.pk-t');
+  if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pkToggle(t); }
+});
+$('pkBody').addEventListener('input', e => {
+  const P = S.pocket;
+  if (e.target.id === 'pkName') { P.name = e.target.value; save(); pkHero(); }
+  else if (e.target.id === 'pkSavings') { P.savings = e.target.value; save(); pkMoney(); }
+});
+$('pkBody').addEventListener('change', e => {
+  const P = S.pocket, f = e.target.dataset.ef;
+  if (e.target.id === 'pkWeekly') { P.weekly = pkNum(e.target.value, P.weekly); pkApply(); save(); pkHero(); return; }
+  if (!f) return;
+  const c = P.chores.find(x => x.id === e.target.closest('[data-ed]').dataset.ed);
+  if (!c) return;
+  c[f] = e.target.value.trim();
+  pkApply(); save(); pkHero();
+});
+$('pkBody').addEventListener('submit', e => {
+  if (e.target.id !== 'pkAdd') return;
+  e.preventDefault();
+  const name = capFirst($('pkNewName').value);
+  if (!name) return $('pkNewName').focus();
+  S.pocket.chores.push({ id: uid(), emoji: $('pkNewEmo').value.trim() || '⭐', name, days: PK_ALL.slice() });
+  pkApply(); save();
+  $('pkNewName').blur();
+  renderPocket(); pkBadge();
+  toast(`Added ${name}`);
+  $('pkNewName').focus();
+});
+
 /* ================= Settings ================= */
 const PRICE_NOTES = { budget: 'Prices like Aldi and Lidl.', std: 'Prices like Tesco, Sainsbury’s and Asda.', premium: 'Prices like Waitrose and M&S.', off: 'No estimates — only prices you type in yourself.' };
 function renderSettings() {
@@ -3535,7 +3977,7 @@ function promptSheet({ title, label, value = '', placeholder = '', ok, onOk }) {
     mount: () => {
       const go = e => { e && e.preventDefault(); const v = $('psIn').value.trim(); if (!v) return $('psIn').focus(); closeSheet(); onOk(v); };
       $('psForm').onsubmit = go; $('psOk').onclick = go;
-      if (!matchMedia('(pointer:fine)').matches) setTimeout(() => $('psIn').focus(), 60);
+      if (!matchMedia('(pointer:fine)').matches) setTimeout(() => { if ($('psIn')) $('psIn').focus(); }, 60);
     },
   });
 }
